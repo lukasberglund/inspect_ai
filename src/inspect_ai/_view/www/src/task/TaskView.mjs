@@ -69,7 +69,7 @@ import {
  * @param {import("../Types.mjs").RenderContext} props.renderContext - is this off canvas
  * @returns {import("preact").JSX.Element | string} The Workspace component.
  */
-export const WorkSpace = ({
+export const TaskView = ({
   task_id,
   evalStatus,
   logFileName,
