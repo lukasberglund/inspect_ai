@@ -15800,13 +15800,16 @@ const ScorerDetailView = ({ name, scores, params, context }) => {
   />`;
 };
 const DatasetDetailView = ({ dataset, context, style }) => {
-  if (!dataset || Object.keys(dataset).length === 0) {
+  const filtered = Object.fromEntries(
+    Object.entries(dataset).filter(([key2]) => key2 !== "sample_ids")
+  );
+  if (!dataset || Object.keys(filtered).length === 0) {
     return m$1`<span style=${{ ...planItemStyle, ...style }}
       >No dataset information available</span
     >`;
   }
   return m$1`<${MetaDataView}
-    entries="${dataset}"
+    entries="${filtered}"
     tableOptions="borderless,sm"
     context=${context}
     style=${{ ...planItemStyle, ...style }}
@@ -25908,6 +25911,7 @@ function App({
       setFilter({});
       setSort(kDefaultSort);
       setSelectedSampleTab(void 0);
+      setSelectedSample(void 0);
       if (showSamples) {
         setSelectedSampleIndex(0);
       } else {
