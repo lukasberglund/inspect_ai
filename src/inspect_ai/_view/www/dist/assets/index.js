@@ -18380,7 +18380,7 @@ function format(delta, left2) {
   return defaultInstance.format(delta, left2);
 }
 const StateDiffView = ({ before, after, style }) => {
-  const state_diff = diff(before, after);
+  const state_diff = diff(sanitizeKeys(before), sanitizeKeys(after));
   const html_result = format(state_diff) || "Unable to render differences";
   return m$1`<div
     dangerouslySetInnerHTML=${{ __html: unescapeNewlines(html_result) }}
@@ -18396,6 +18396,20 @@ function unescapeNewlines(obj) {
     }
   }
   return obj;
+}
+function sanitizeKeys(obj) {
+  if (typeof obj !== "object" || obj === null) {
+    return obj;
+  }
+  if (Array.isArray(obj)) {
+    return obj.map(sanitizeKeys);
+  }
+  return Object.fromEntries(
+    Object.entries(obj).map(([key2, value]) => [
+      key2.replace(/</g, "&lt;").replace(/>/g, "&gt;"),
+      sanitizeKeys(value)
+    ])
+  );
 }
 const StateEventView = ({ id, event, style }) => {
   const summary = summarizeChanges(event.changes);
@@ -19182,7 +19196,7 @@ const ScoreEventView = ({ id, event, style }) => {
       <div><${MarkdownDiv} markdown=${event.score.explanation}/></div>
       <div style=${{ gridColumn: "1 / -1", borderBottom: "solid 1px var(--bs-light-border-subtle" }}></div>
       <div style=${{ ...TextStyle.label }}>Score</div>  
-      <div>${event.score.value}</div>
+      <div>${renderScore(event.score.value)}</div>
       <div style=${{ gridColumn: "1 / -1", borderBottom: "solid 1px var(--bs-light-border-subtle" }}></div>
     </div>
     ${event.score.metadata ? m$1`<div name="Metadata">
@@ -19192,9 +19206,16 @@ const ScoreEventView = ({ id, event, style }) => {
               style=${{ margin: "0.5em 0" }}
             />
           </div>` : void 0}
-
-
   </${EventPanel}>`;
+};
+const renderScore = (value) => {
+  if (Array.isArray(value)) {
+    return m$1`<${MetaDataGrid} entries=${value} />`;
+  } else if (typeof value === "object") {
+    return m$1`<${MetaDataGrid} entries=${value} />`;
+  } else {
+    return value;
+  }
 };
 const ApprovalEventView = ({ id, event, style }) => {
   return m$1`
