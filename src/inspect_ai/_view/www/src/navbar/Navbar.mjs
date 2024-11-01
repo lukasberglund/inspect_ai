@@ -19,7 +19,6 @@ import { SecondaryBar } from "./SecondaryBar.mjs";
  * @param {import("../types/log").EvalPlan} [props.evalPlan] - The EvalSpec
  * @param {import("../api/Types.mjs").SampleSummary[]} [props.samples] - the samples
  * @param {string} [props.status] - the status
- * @param {boolean} props.offcanvas - Are we in offcanvas mode?
  * @param {boolean} props.showToggle - Should we show the toggle?
  *
  * @returns {import("preact").JSX.Element} The TranscriptView component.
@@ -31,10 +30,8 @@ export const Navbar = ({
   evalResults,
   samples,
   showToggle,
-  offcanvas,
   status,
 }) => {
-  const toggleOffCanClass = offcanvas ? "" : " d-md-none";
   const logFileName = file ? filename(file) : "";
 
   const task = evalSpec?.task;
@@ -67,7 +64,7 @@ export const Navbar = ({
           ${showToggle
             ? html`<button
                 id="sidebarToggle"
-                class="btn${toggleOffCanClass}"
+                class="btn"
                 type="button"
                 data-bs-toggle="offcanvas"
                 data-bs-target="#sidebarOffCanvas"
@@ -77,7 +74,7 @@ export const Navbar = ({
                   display: "flex",
                 }}
               >
-                <i class=${ApplicationIcons.menu}></i>
+                <i class=${ApplicationIcons.previous}></i>
               </button> `
             : ""}
           <div
