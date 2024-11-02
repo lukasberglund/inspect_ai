@@ -20,6 +20,7 @@ import { SecondaryBar } from "./SecondaryBar.mjs";
  * @param {import("../api/Types.mjs").SampleSummary[]} [props.samples] - the samples
  * @param {string} [props.status] - the status
  * @param {boolean} props.showToggle - Should we show the toggle?
+ * @param {() => void} props.onToggle - When the toggle is activated
  *
  * @returns {import("preact").JSX.Element} The TranscriptView component.
  */
@@ -30,6 +31,7 @@ export const Navbar = ({
   evalResults,
   samples,
   showToggle,
+  onToggle,
   status,
 }) => {
   const logFileName = file ? filename(file) : "";
@@ -73,6 +75,7 @@ export const Navbar = ({
                   padding: "0rem 0.1rem 0.1rem 0rem",
                   display: "flex",
                 }}
+                onclick=${onToggle}
               >
                 <i class=${ApplicationIcons.previous}></i>
               </button> `
