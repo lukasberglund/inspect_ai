@@ -215,6 +215,13 @@ class Model:
         Returns:
            ModelOutput
         """
+        # verify that model apis are allowed
+        if (
+            os.getenv("INSPECT_DISABLE_MODEL_API", None) is not None
+            and ModelName(self).api != "mockllm"
+        ):
+            raise RuntimeError("Model APIs disabled by INSPECT_DISABLE_MODEL_API")
+
         # base config for this model
         base_config = self.config
 
