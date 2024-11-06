@@ -76,7 +76,7 @@ export function App({
   const [logHeaderPage, setLogHeaderPage] = useState(
     initialState?.logHeaderPage || -1,
   );
-  const [logHeaderPageSize] = useState(10);
+  const [logHeaderPageSize] = useState(initialState?.logHeaderPageSize || 10);
 
   // Selected Log
   const [selectedLog, setSelectedLog] = useState(
@@ -129,7 +129,6 @@ export function App({
   );
 
   // Other application state
-  const [offcanvas, setOffcanvas] = useState(initialState?.offcanvas || false);
   const [showFind, setShowFind] = useState(initialState?.showFind || false);
 
   // Filtering and sorting
@@ -194,7 +193,6 @@ export function App({
       showingSampleDialog,
       status,
       capabilities,
-      offcanvas,
       showFind,
       filter,
       epoch,
@@ -204,6 +202,7 @@ export function App({
       filteredSamples,
       groupBy,
       groupByOrder,
+      logHeaderPageSize
     };
     if (saveInitialState) {
       saveInitialState(state);
@@ -223,7 +222,6 @@ export function App({
     showingSampleDialog,
     status,
     capabilities,
-    offcanvas,
     showFind,
     filter,
     epoch,
@@ -233,6 +231,7 @@ export function App({
     filteredSamples,
     groupBy,
     groupByOrder,
+    logHeaderPageSize
   ]);
 
   const handleSampleShowingDialog = useCallback(
@@ -704,8 +703,6 @@ export function App({
         }
       }
 
-      setOffcanvas(true);
-
       // If the URL provides a task file, load that
       const logPath = urlParams.get("task_file");
 
@@ -845,7 +842,6 @@ export function App({
                 sampleError=${sampleError}
                 samplesDescriptor=${samplesDescriptor}
                 refreshLog=${refreshLog}
-                offcanvas=${offcanvas}
                 capabilities=${capabilities}
                 selected=${selectedLogIndex}
                 selectedSample=${selectedSample}
