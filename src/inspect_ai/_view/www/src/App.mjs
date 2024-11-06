@@ -202,7 +202,7 @@ export function App({
       filteredSamples,
       groupBy,
       groupByOrder,
-      logHeaderPageSize
+      logHeaderPageSize,
     };
     if (saveInitialState) {
       saveInitialState(state);
@@ -231,7 +231,7 @@ export function App({
     filteredSamples,
     groupBy,
     groupByOrder,
-    logHeaderPageSize
+    logHeaderPageSize,
   ]);
 
   const handleSampleShowingDialog = useCallback(
