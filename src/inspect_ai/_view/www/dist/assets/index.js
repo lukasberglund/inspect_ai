@@ -19310,7 +19310,13 @@ const clientApi = (api2) => {
         index: eval_files[file],
         // Store original index
         header
-      }))
+      })).catch((error2) => {
+        console.log(error2);
+        return {
+          index: eval_files[file],
+          header: void 0
+        };
+      })
     );
     const jsonLogHeadersPromise = api2.eval_log_headers(Object.keys(json_files)).then(
       (headers2) => headers2.map((header, i) => ({
@@ -19318,13 +19324,16 @@ const clientApi = (api2) => {
         // Store original index
         header
       }))
-    );
+    ).catch((error2) => {
+      console.error("Failed to read JSON log headers.\n" + error2.message);
+      return [];
+    });
     const headers = await Promise.all([
       ...evalLogHeadersPromises,
       jsonLogHeadersPromise
     ]);
     const orderedHeaders = headers.flat().sort((a2, b2) => a2.index - b2.index);
-    return orderedHeaders.map(({ header }) => header);
+    return orderedHeaders.map(({ header }) => header).filter((header) => !!header);
   };
   return {
     client_events: () => {
@@ -21798,7 +21807,9 @@ const TaskList = ({
         </div>
       </div>
       <div style=${{ fontSize: FontSize.small, marginTop: "0.3em" }}>
-        <pre>${configStr(row.item.eval.config, row.item.eval.task_args)}</pre>
+        <pre style=${{ whiteSpace: "pre-wrap" }}>
+${configStr(row.item.eval.config, row.item.eval.task_args)}</pre
+        >
       </div>
       <div style=${{ fontSize: FontSize.small, marginTop: "0.3em" }}>
         <div>

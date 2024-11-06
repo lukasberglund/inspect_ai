@@ -161,10 +161,18 @@ export const clientApi = (api) => {
 
     // Get the promises for eval log headers
     const evalLogHeadersPromises = Object.keys(eval_files).map((file) =>
-      get_eval_log_header(file).then((header) => ({
-        index: eval_files[file], // Store original index
-        header,
-      })),
+      get_eval_log_header(file)
+        .then((header) => ({
+          index: eval_files[file], // Store original index
+          header,
+        }))
+        .catch((error) => {
+          console.log(error);
+          return {
+            index: eval_files[file],
+            header: undefined,
+          };
+        }),
     );
 
     // Get the promise for json log headers
@@ -175,7 +183,11 @@ export const clientApi = (api) => {
           index: json_files[Object.keys(json_files)[i]], // Store original index
           header,
         })),
-      );
+      )
+      .catch((error) => {
+        console.error("Failed to read JSON log headers.\n" + error.message);
+        return [];
+      });
 
     // Wait for all promises to resolve
     const headers = await Promise.all([
@@ -187,7 +199,9 @@ export const clientApi = (api) => {
     const orderedHeaders = headers.flat().sort((a, b) => a.index - b.index);
 
     // Return only the header values in the correct order
-    return orderedHeaders.map(({ header }) => header);
+    return orderedHeaders
+      .map(({ header }) => header)
+      .filter((header) => !!header);
   };
 
   return {
