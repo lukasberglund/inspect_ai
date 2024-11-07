@@ -66,6 +66,8 @@ import {
  * @param {import("../Types.mjs").ScoreLabel[]} props.scores - The current selected scorer
  * @param {string} props.selectedTab - The selected tab id
  * @param {(id: string) => void} props.setSelectedTab - function to update the selected tab
+ * @param {(index: number) => void} props.nextSample - the selected tab
+ * @param {(index: number) => void} props.previousSample - function to select a tab
  * @param {import("../Types.mjs").RenderContext} props.renderContext - is this off canvas
  * @returns {import("preact").JSX.Element | string} The Workspace component.
  */
@@ -91,10 +93,11 @@ export const TaskView = ({
   samplesDescriptor,
   selectedSampleIndex,
   setSelectedSampleIndex,
-  showingSampleDialog,
   setShowingSampleDialog,
   selectedSampleTab,
   setSelectedSampleTab,
+  nextSample,
+  previousSample,
   sampleStatus,
   sampleError,
   sort,
@@ -143,7 +146,6 @@ export const TaskView = ({
           sample=${selectedSample}
           sampleStatus=${sampleStatus}
           sampleError=${sampleError}
-          showingSampleDialog=${showingSampleDialog}
           setShowingSampleDialog=${setShowingSampleDialog}
           samples=${samples}
           sampleMode=${sampleMode}
@@ -154,6 +156,8 @@ export const TaskView = ({
           sampleDescriptor=${samplesDescriptor}
           selectedSampleTab=${selectedSampleTab}
           setSelectedSampleTab=${setSelectedSampleTab}
+          nextSample=${nextSample}
+          previousSample=${previousSample}
           filter=${filter}
           sort=${sort}
           epoch=${epoch}

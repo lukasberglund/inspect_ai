@@ -2532,1579 +2532,6 @@ function C(n2, t2) {
 function D(n2, t2) {
   return "function" == typeof t2 ? t2(n2) : t2;
 }
-const millisecondsInWeek = 6048e5;
-const millisecondsInDay = 864e5;
-const constructFromSymbol = Symbol.for("constructDateFrom");
-function constructFrom(date, value) {
-  if (typeof date === "function") return date(value);
-  if (date && typeof date === "object" && constructFromSymbol in date)
-    return date[constructFromSymbol](value);
-  if (date instanceof Date) return new date.constructor(value);
-  return new Date(value);
-}
-function toDate(argument, context) {
-  return constructFrom(context || argument, argument);
-}
-let defaultOptions$1 = {};
-function getDefaultOptions() {
-  return defaultOptions$1;
-}
-function startOfWeek(date, options) {
-  var _a2, _b2, _c, _d;
-  const defaultOptions2 = getDefaultOptions();
-  const weekStartsOn = (options == null ? void 0 : options.weekStartsOn) ?? ((_b2 = (_a2 = options == null ? void 0 : options.locale) == null ? void 0 : _a2.options) == null ? void 0 : _b2.weekStartsOn) ?? defaultOptions2.weekStartsOn ?? ((_d = (_c = defaultOptions2.locale) == null ? void 0 : _c.options) == null ? void 0 : _d.weekStartsOn) ?? 0;
-  const _date = toDate(date, options == null ? void 0 : options.in);
-  const day = _date.getDay();
-  const diff2 = (day < weekStartsOn ? 7 : 0) + day - weekStartsOn;
-  _date.setDate(_date.getDate() - diff2);
-  _date.setHours(0, 0, 0, 0);
-  return _date;
-}
-function startOfISOWeek(date, options) {
-  return startOfWeek(date, { ...options, weekStartsOn: 1 });
-}
-function getISOWeekYear(date, options) {
-  const _date = toDate(date, options == null ? void 0 : options.in);
-  const year = _date.getFullYear();
-  const fourthOfJanuaryOfNextYear = constructFrom(_date, 0);
-  fourthOfJanuaryOfNextYear.setFullYear(year + 1, 0, 4);
-  fourthOfJanuaryOfNextYear.setHours(0, 0, 0, 0);
-  const startOfNextYear = startOfISOWeek(fourthOfJanuaryOfNextYear);
-  const fourthOfJanuaryOfThisYear = constructFrom(_date, 0);
-  fourthOfJanuaryOfThisYear.setFullYear(year, 0, 4);
-  fourthOfJanuaryOfThisYear.setHours(0, 0, 0, 0);
-  const startOfThisYear = startOfISOWeek(fourthOfJanuaryOfThisYear);
-  if (_date.getTime() >= startOfNextYear.getTime()) {
-    return year + 1;
-  } else if (_date.getTime() >= startOfThisYear.getTime()) {
-    return year;
-  } else {
-    return year - 1;
-  }
-}
-function getTimezoneOffsetInMilliseconds(date) {
-  const _date = toDate(date);
-  const utcDate = new Date(
-    Date.UTC(
-      _date.getFullYear(),
-      _date.getMonth(),
-      _date.getDate(),
-      _date.getHours(),
-      _date.getMinutes(),
-      _date.getSeconds(),
-      _date.getMilliseconds()
-    )
-  );
-  utcDate.setUTCFullYear(_date.getFullYear());
-  return +date - +utcDate;
-}
-function normalizeDates(context, ...dates) {
-  const normalize3 = constructFrom.bind(
-    null,
-    dates.find((date) => typeof date === "object")
-  );
-  return dates.map(normalize3);
-}
-function startOfDay(date, options) {
-  const _date = toDate(date, options == null ? void 0 : options.in);
-  _date.setHours(0, 0, 0, 0);
-  return _date;
-}
-function differenceInCalendarDays(laterDate, earlierDate, options) {
-  const [laterDate_, earlierDate_] = normalizeDates(
-    options == null ? void 0 : options.in,
-    laterDate,
-    earlierDate
-  );
-  const laterStartOfDay = startOfDay(laterDate_);
-  const earlierStartOfDay = startOfDay(earlierDate_);
-  const laterTimestamp = +laterStartOfDay - getTimezoneOffsetInMilliseconds(laterStartOfDay);
-  const earlierTimestamp = +earlierStartOfDay - getTimezoneOffsetInMilliseconds(earlierStartOfDay);
-  return Math.round((laterTimestamp - earlierTimestamp) / millisecondsInDay);
-}
-function startOfISOWeekYear(date, options) {
-  const year = getISOWeekYear(date, options);
-  const fourthOfJanuary = constructFrom(date, 0);
-  fourthOfJanuary.setFullYear(year, 0, 4);
-  fourthOfJanuary.setHours(0, 0, 0, 0);
-  return startOfISOWeek(fourthOfJanuary);
-}
-function constructNow(date) {
-  return constructFrom(date, Date.now());
-}
-function isSameDay(laterDate, earlierDate, options) {
-  const [dateLeft_, dateRight_] = normalizeDates(
-    options == null ? void 0 : options.in,
-    laterDate,
-    earlierDate
-  );
-  return +startOfDay(dateLeft_) === +startOfDay(dateRight_);
-}
-function isDate(value) {
-  return value instanceof Date || typeof value === "object" && Object.prototype.toString.call(value) === "[object Date]";
-}
-function isValid(date) {
-  return !(!isDate(date) && typeof date !== "number" || isNaN(+toDate(date)));
-}
-function startOfYear(date, options) {
-  const date_ = toDate(date, options == null ? void 0 : options.in);
-  date_.setFullYear(date_.getFullYear(), 0, 1);
-  date_.setHours(0, 0, 0, 0);
-  return date_;
-}
-const formatDistanceLocale = {
-  lessThanXSeconds: {
-    one: "less than a second",
-    other: "less than {{count}} seconds"
-  },
-  xSeconds: {
-    one: "1 second",
-    other: "{{count}} seconds"
-  },
-  halfAMinute: "half a minute",
-  lessThanXMinutes: {
-    one: "less than a minute",
-    other: "less than {{count}} minutes"
-  },
-  xMinutes: {
-    one: "1 minute",
-    other: "{{count}} minutes"
-  },
-  aboutXHours: {
-    one: "about 1 hour",
-    other: "about {{count}} hours"
-  },
-  xHours: {
-    one: "1 hour",
-    other: "{{count}} hours"
-  },
-  xDays: {
-    one: "1 day",
-    other: "{{count}} days"
-  },
-  aboutXWeeks: {
-    one: "about 1 week",
-    other: "about {{count}} weeks"
-  },
-  xWeeks: {
-    one: "1 week",
-    other: "{{count}} weeks"
-  },
-  aboutXMonths: {
-    one: "about 1 month",
-    other: "about {{count}} months"
-  },
-  xMonths: {
-    one: "1 month",
-    other: "{{count}} months"
-  },
-  aboutXYears: {
-    one: "about 1 year",
-    other: "about {{count}} years"
-  },
-  xYears: {
-    one: "1 year",
-    other: "{{count}} years"
-  },
-  overXYears: {
-    one: "over 1 year",
-    other: "over {{count}} years"
-  },
-  almostXYears: {
-    one: "almost 1 year",
-    other: "almost {{count}} years"
-  }
-};
-const formatDistance = (token2, count, options) => {
-  let result;
-  const tokenValue = formatDistanceLocale[token2];
-  if (typeof tokenValue === "string") {
-    result = tokenValue;
-  } else if (count === 1) {
-    result = tokenValue.one;
-  } else {
-    result = tokenValue.other.replace("{{count}}", count.toString());
-  }
-  if (options == null ? void 0 : options.addSuffix) {
-    if (options.comparison && options.comparison > 0) {
-      return "in " + result;
-    } else {
-      return result + " ago";
-    }
-  }
-  return result;
-};
-function buildFormatLongFn(args) {
-  return (options = {}) => {
-    const width = options.width ? String(options.width) : args.defaultWidth;
-    const format2 = args.formats[width] || args.formats[args.defaultWidth];
-    return format2;
-  };
-}
-const dateFormats = {
-  full: "EEEE, MMMM do, y",
-  long: "MMMM do, y",
-  medium: "MMM d, y",
-  short: "MM/dd/yyyy"
-};
-const timeFormats = {
-  full: "h:mm:ss a zzzz",
-  long: "h:mm:ss a z",
-  medium: "h:mm:ss a",
-  short: "h:mm a"
-};
-const dateTimeFormats = {
-  full: "{{date}} 'at' {{time}}",
-  long: "{{date}} 'at' {{time}}",
-  medium: "{{date}}, {{time}}",
-  short: "{{date}}, {{time}}"
-};
-const formatLong = {
-  date: buildFormatLongFn({
-    formats: dateFormats,
-    defaultWidth: "full"
-  }),
-  time: buildFormatLongFn({
-    formats: timeFormats,
-    defaultWidth: "full"
-  }),
-  dateTime: buildFormatLongFn({
-    formats: dateTimeFormats,
-    defaultWidth: "full"
-  })
-};
-const formatRelativeLocale = {
-  lastWeek: "'last' eeee 'at' p",
-  yesterday: "'yesterday at' p",
-  today: "'today at' p",
-  tomorrow: "'tomorrow at' p",
-  nextWeek: "eeee 'at' p",
-  other: "P"
-};
-const formatRelative = (token2, _date, _baseDate, _options) => formatRelativeLocale[token2];
-function buildLocalizeFn(args) {
-  return (value, options) => {
-    const context = (options == null ? void 0 : options.context) ? String(options.context) : "standalone";
-    let valuesArray;
-    if (context === "formatting" && args.formattingValues) {
-      const defaultWidth = args.defaultFormattingWidth || args.defaultWidth;
-      const width = (options == null ? void 0 : options.width) ? String(options.width) : defaultWidth;
-      valuesArray = args.formattingValues[width] || args.formattingValues[defaultWidth];
-    } else {
-      const defaultWidth = args.defaultWidth;
-      const width = (options == null ? void 0 : options.width) ? String(options.width) : args.defaultWidth;
-      valuesArray = args.values[width] || args.values[defaultWidth];
-    }
-    const index = args.argumentCallback ? args.argumentCallback(value) : value;
-    return valuesArray[index];
-  };
-}
-const eraValues = {
-  narrow: ["B", "A"],
-  abbreviated: ["BC", "AD"],
-  wide: ["Before Christ", "Anno Domini"]
-};
-const quarterValues = {
-  narrow: ["1", "2", "3", "4"],
-  abbreviated: ["Q1", "Q2", "Q3", "Q4"],
-  wide: ["1st quarter", "2nd quarter", "3rd quarter", "4th quarter"]
-};
-const monthValues = {
-  narrow: ["J", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D"],
-  abbreviated: [
-    "Jan",
-    "Feb",
-    "Mar",
-    "Apr",
-    "May",
-    "Jun",
-    "Jul",
-    "Aug",
-    "Sep",
-    "Oct",
-    "Nov",
-    "Dec"
-  ],
-  wide: [
-    "January",
-    "February",
-    "March",
-    "April",
-    "May",
-    "June",
-    "July",
-    "August",
-    "September",
-    "October",
-    "November",
-    "December"
-  ]
-};
-const dayValues = {
-  narrow: ["S", "M", "T", "W", "T", "F", "S"],
-  short: ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"],
-  abbreviated: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
-  wide: [
-    "Sunday",
-    "Monday",
-    "Tuesday",
-    "Wednesday",
-    "Thursday",
-    "Friday",
-    "Saturday"
-  ]
-};
-const dayPeriodValues = {
-  narrow: {
-    am: "a",
-    pm: "p",
-    midnight: "mi",
-    noon: "n",
-    morning: "morning",
-    afternoon: "afternoon",
-    evening: "evening",
-    night: "night"
-  },
-  abbreviated: {
-    am: "AM",
-    pm: "PM",
-    midnight: "midnight",
-    noon: "noon",
-    morning: "morning",
-    afternoon: "afternoon",
-    evening: "evening",
-    night: "night"
-  },
-  wide: {
-    am: "a.m.",
-    pm: "p.m.",
-    midnight: "midnight",
-    noon: "noon",
-    morning: "morning",
-    afternoon: "afternoon",
-    evening: "evening",
-    night: "night"
-  }
-};
-const formattingDayPeriodValues = {
-  narrow: {
-    am: "a",
-    pm: "p",
-    midnight: "mi",
-    noon: "n",
-    morning: "in the morning",
-    afternoon: "in the afternoon",
-    evening: "in the evening",
-    night: "at night"
-  },
-  abbreviated: {
-    am: "AM",
-    pm: "PM",
-    midnight: "midnight",
-    noon: "noon",
-    morning: "in the morning",
-    afternoon: "in the afternoon",
-    evening: "in the evening",
-    night: "at night"
-  },
-  wide: {
-    am: "a.m.",
-    pm: "p.m.",
-    midnight: "midnight",
-    noon: "noon",
-    morning: "in the morning",
-    afternoon: "in the afternoon",
-    evening: "in the evening",
-    night: "at night"
-  }
-};
-const ordinalNumber = (dirtyNumber, _options) => {
-  const number = Number(dirtyNumber);
-  const rem100 = number % 100;
-  if (rem100 > 20 || rem100 < 10) {
-    switch (rem100 % 10) {
-      case 1:
-        return number + "st";
-      case 2:
-        return number + "nd";
-      case 3:
-        return number + "rd";
-    }
-  }
-  return number + "th";
-};
-const localize = {
-  ordinalNumber,
-  era: buildLocalizeFn({
-    values: eraValues,
-    defaultWidth: "wide"
-  }),
-  quarter: buildLocalizeFn({
-    values: quarterValues,
-    defaultWidth: "wide",
-    argumentCallback: (quarter) => quarter - 1
-  }),
-  month: buildLocalizeFn({
-    values: monthValues,
-    defaultWidth: "wide"
-  }),
-  day: buildLocalizeFn({
-    values: dayValues,
-    defaultWidth: "wide"
-  }),
-  dayPeriod: buildLocalizeFn({
-    values: dayPeriodValues,
-    defaultWidth: "wide",
-    formattingValues: formattingDayPeriodValues,
-    defaultFormattingWidth: "wide"
-  })
-};
-function buildMatchFn(args) {
-  return (string, options = {}) => {
-    const width = options.width;
-    const matchPattern = width && args.matchPatterns[width] || args.matchPatterns[args.defaultMatchWidth];
-    const matchResult = string.match(matchPattern);
-    if (!matchResult) {
-      return null;
-    }
-    const matchedString = matchResult[0];
-    const parsePatterns = width && args.parsePatterns[width] || args.parsePatterns[args.defaultParseWidth];
-    const key2 = Array.isArray(parsePatterns) ? findIndex(parsePatterns, (pattern) => pattern.test(matchedString)) : (
-      // [TODO] -- I challenge you to fix the type
-      findKey(parsePatterns, (pattern) => pattern.test(matchedString))
-    );
-    let value;
-    value = args.valueCallback ? args.valueCallback(key2) : key2;
-    value = options.valueCallback ? (
-      // [TODO] -- I challenge you to fix the type
-      options.valueCallback(value)
-    ) : value;
-    const rest = string.slice(matchedString.length);
-    return { value, rest };
-  };
-}
-function findKey(object, predicate) {
-  for (const key2 in object) {
-    if (Object.prototype.hasOwnProperty.call(object, key2) && predicate(object[key2])) {
-      return key2;
-    }
-  }
-  return void 0;
-}
-function findIndex(array, predicate) {
-  for (let key2 = 0; key2 < array.length; key2++) {
-    if (predicate(array[key2])) {
-      return key2;
-    }
-  }
-  return void 0;
-}
-function buildMatchPatternFn(args) {
-  return (string, options = {}) => {
-    const matchResult = string.match(args.matchPattern);
-    if (!matchResult) return null;
-    const matchedString = matchResult[0];
-    const parseResult = string.match(args.parsePattern);
-    if (!parseResult) return null;
-    let value = args.valueCallback ? args.valueCallback(parseResult[0]) : parseResult[0];
-    value = options.valueCallback ? options.valueCallback(value) : value;
-    const rest = string.slice(matchedString.length);
-    return { value, rest };
-  };
-}
-const matchOrdinalNumberPattern = /^(\d+)(th|st|nd|rd)?/i;
-const parseOrdinalNumberPattern = /\d+/i;
-const matchEraPatterns = {
-  narrow: /^(b|a)/i,
-  abbreviated: /^(b\.?\s?c\.?|b\.?\s?c\.?\s?e\.?|a\.?\s?d\.?|c\.?\s?e\.?)/i,
-  wide: /^(before christ|before common era|anno domini|common era)/i
-};
-const parseEraPatterns = {
-  any: [/^b/i, /^(a|c)/i]
-};
-const matchQuarterPatterns = {
-  narrow: /^[1234]/i,
-  abbreviated: /^q[1234]/i,
-  wide: /^[1234](th|st|nd|rd)? quarter/i
-};
-const parseQuarterPatterns = {
-  any: [/1/i, /2/i, /3/i, /4/i]
-};
-const matchMonthPatterns = {
-  narrow: /^[jfmasond]/i,
-  abbreviated: /^(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)/i,
-  wide: /^(january|february|march|april|may|june|july|august|september|october|november|december)/i
-};
-const parseMonthPatterns = {
-  narrow: [
-    /^j/i,
-    /^f/i,
-    /^m/i,
-    /^a/i,
-    /^m/i,
-    /^j/i,
-    /^j/i,
-    /^a/i,
-    /^s/i,
-    /^o/i,
-    /^n/i,
-    /^d/i
-  ],
-  any: [
-    /^ja/i,
-    /^f/i,
-    /^mar/i,
-    /^ap/i,
-    /^may/i,
-    /^jun/i,
-    /^jul/i,
-    /^au/i,
-    /^s/i,
-    /^o/i,
-    /^n/i,
-    /^d/i
-  ]
-};
-const matchDayPatterns = {
-  narrow: /^[smtwf]/i,
-  short: /^(su|mo|tu|we|th|fr|sa)/i,
-  abbreviated: /^(sun|mon|tue|wed|thu|fri|sat)/i,
-  wide: /^(sunday|monday|tuesday|wednesday|thursday|friday|saturday)/i
-};
-const parseDayPatterns = {
-  narrow: [/^s/i, /^m/i, /^t/i, /^w/i, /^t/i, /^f/i, /^s/i],
-  any: [/^su/i, /^m/i, /^tu/i, /^w/i, /^th/i, /^f/i, /^sa/i]
-};
-const matchDayPeriodPatterns = {
-  narrow: /^(a|p|mi|n|(in the|at) (morning|afternoon|evening|night))/i,
-  any: /^([ap]\.?\s?m\.?|midnight|noon|(in the|at) (morning|afternoon|evening|night))/i
-};
-const parseDayPeriodPatterns = {
-  any: {
-    am: /^a/i,
-    pm: /^p/i,
-    midnight: /^mi/i,
-    noon: /^no/i,
-    morning: /morning/i,
-    afternoon: /afternoon/i,
-    evening: /evening/i,
-    night: /night/i
-  }
-};
-const match = {
-  ordinalNumber: buildMatchPatternFn({
-    matchPattern: matchOrdinalNumberPattern,
-    parsePattern: parseOrdinalNumberPattern,
-    valueCallback: (value) => parseInt(value, 10)
-  }),
-  era: buildMatchFn({
-    matchPatterns: matchEraPatterns,
-    defaultMatchWidth: "wide",
-    parsePatterns: parseEraPatterns,
-    defaultParseWidth: "any"
-  }),
-  quarter: buildMatchFn({
-    matchPatterns: matchQuarterPatterns,
-    defaultMatchWidth: "wide",
-    parsePatterns: parseQuarterPatterns,
-    defaultParseWidth: "any",
-    valueCallback: (index) => index + 1
-  }),
-  month: buildMatchFn({
-    matchPatterns: matchMonthPatterns,
-    defaultMatchWidth: "wide",
-    parsePatterns: parseMonthPatterns,
-    defaultParseWidth: "any"
-  }),
-  day: buildMatchFn({
-    matchPatterns: matchDayPatterns,
-    defaultMatchWidth: "wide",
-    parsePatterns: parseDayPatterns,
-    defaultParseWidth: "any"
-  }),
-  dayPeriod: buildMatchFn({
-    matchPatterns: matchDayPeriodPatterns,
-    defaultMatchWidth: "any",
-    parsePatterns: parseDayPeriodPatterns,
-    defaultParseWidth: "any"
-  })
-};
-const enUS = {
-  code: "en-US",
-  formatDistance,
-  formatLong,
-  formatRelative,
-  localize,
-  match,
-  options: {
-    weekStartsOn: 0,
-    firstWeekContainsDate: 1
-  }
-};
-function getDayOfYear(date, options) {
-  const _date = toDate(date, options == null ? void 0 : options.in);
-  const diff2 = differenceInCalendarDays(_date, startOfYear(_date));
-  const dayOfYear = diff2 + 1;
-  return dayOfYear;
-}
-function getISOWeek(date, options) {
-  const _date = toDate(date, options == null ? void 0 : options.in);
-  const diff2 = +startOfISOWeek(_date) - +startOfISOWeekYear(_date);
-  return Math.round(diff2 / millisecondsInWeek) + 1;
-}
-function getWeekYear(date, options) {
-  var _a2, _b2, _c, _d;
-  const _date = toDate(date, options == null ? void 0 : options.in);
-  const year = _date.getFullYear();
-  const defaultOptions2 = getDefaultOptions();
-  const firstWeekContainsDate = (options == null ? void 0 : options.firstWeekContainsDate) ?? ((_b2 = (_a2 = options == null ? void 0 : options.locale) == null ? void 0 : _a2.options) == null ? void 0 : _b2.firstWeekContainsDate) ?? defaultOptions2.firstWeekContainsDate ?? ((_d = (_c = defaultOptions2.locale) == null ? void 0 : _c.options) == null ? void 0 : _d.firstWeekContainsDate) ?? 1;
-  const firstWeekOfNextYear = constructFrom((options == null ? void 0 : options.in) || date, 0);
-  firstWeekOfNextYear.setFullYear(year + 1, 0, firstWeekContainsDate);
-  firstWeekOfNextYear.setHours(0, 0, 0, 0);
-  const startOfNextYear = startOfWeek(firstWeekOfNextYear, options);
-  const firstWeekOfThisYear = constructFrom((options == null ? void 0 : options.in) || date, 0);
-  firstWeekOfThisYear.setFullYear(year, 0, firstWeekContainsDate);
-  firstWeekOfThisYear.setHours(0, 0, 0, 0);
-  const startOfThisYear = startOfWeek(firstWeekOfThisYear, options);
-  if (+_date >= +startOfNextYear) {
-    return year + 1;
-  } else if (+_date >= +startOfThisYear) {
-    return year;
-  } else {
-    return year - 1;
-  }
-}
-function startOfWeekYear(date, options) {
-  var _a2, _b2, _c, _d;
-  const defaultOptions2 = getDefaultOptions();
-  const firstWeekContainsDate = (options == null ? void 0 : options.firstWeekContainsDate) ?? ((_b2 = (_a2 = options == null ? void 0 : options.locale) == null ? void 0 : _a2.options) == null ? void 0 : _b2.firstWeekContainsDate) ?? defaultOptions2.firstWeekContainsDate ?? ((_d = (_c = defaultOptions2.locale) == null ? void 0 : _c.options) == null ? void 0 : _d.firstWeekContainsDate) ?? 1;
-  const year = getWeekYear(date, options);
-  const firstWeek = constructFrom((options == null ? void 0 : options.in) || date, 0);
-  firstWeek.setFullYear(year, 0, firstWeekContainsDate);
-  firstWeek.setHours(0, 0, 0, 0);
-  const _date = startOfWeek(firstWeek, options);
-  return _date;
-}
-function getWeek(date, options) {
-  const _date = toDate(date, options == null ? void 0 : options.in);
-  const diff2 = +startOfWeek(_date, options) - +startOfWeekYear(_date, options);
-  return Math.round(diff2 / millisecondsInWeek) + 1;
-}
-function addLeadingZeros(number, targetLength) {
-  const sign2 = number < 0 ? "-" : "";
-  const output = Math.abs(number).toString().padStart(targetLength, "0");
-  return sign2 + output;
-}
-const lightFormatters = {
-  // Year
-  y(date, token2) {
-    const signedYear = date.getFullYear();
-    const year = signedYear > 0 ? signedYear : 1 - signedYear;
-    return addLeadingZeros(token2 === "yy" ? year % 100 : year, token2.length);
-  },
-  // Month
-  M(date, token2) {
-    const month = date.getMonth();
-    return token2 === "M" ? String(month + 1) : addLeadingZeros(month + 1, 2);
-  },
-  // Day of the month
-  d(date, token2) {
-    return addLeadingZeros(date.getDate(), token2.length);
-  },
-  // AM or PM
-  a(date, token2) {
-    const dayPeriodEnumValue = date.getHours() / 12 >= 1 ? "pm" : "am";
-    switch (token2) {
-      case "a":
-      case "aa":
-        return dayPeriodEnumValue.toUpperCase();
-      case "aaa":
-        return dayPeriodEnumValue;
-      case "aaaaa":
-        return dayPeriodEnumValue[0];
-      case "aaaa":
-      default:
-        return dayPeriodEnumValue === "am" ? "a.m." : "p.m.";
-    }
-  },
-  // Hour [1-12]
-  h(date, token2) {
-    return addLeadingZeros(date.getHours() % 12 || 12, token2.length);
-  },
-  // Hour [0-23]
-  H(date, token2) {
-    return addLeadingZeros(date.getHours(), token2.length);
-  },
-  // Minute
-  m(date, token2) {
-    return addLeadingZeros(date.getMinutes(), token2.length);
-  },
-  // Second
-  s(date, token2) {
-    return addLeadingZeros(date.getSeconds(), token2.length);
-  },
-  // Fraction of second
-  S(date, token2) {
-    const numberOfDigits = token2.length;
-    const milliseconds = date.getMilliseconds();
-    const fractionalSeconds = Math.trunc(
-      milliseconds * Math.pow(10, numberOfDigits - 3)
-    );
-    return addLeadingZeros(fractionalSeconds, token2.length);
-  }
-};
-const dayPeriodEnum = {
-  am: "am",
-  pm: "pm",
-  midnight: "midnight",
-  noon: "noon",
-  morning: "morning",
-  afternoon: "afternoon",
-  evening: "evening",
-  night: "night"
-};
-const formatters = {
-  // Era
-  G: function(date, token2, localize2) {
-    const era = date.getFullYear() > 0 ? 1 : 0;
-    switch (token2) {
-      case "G":
-      case "GG":
-      case "GGG":
-        return localize2.era(era, { width: "abbreviated" });
-      case "GGGGG":
-        return localize2.era(era, { width: "narrow" });
-      case "GGGG":
-      default:
-        return localize2.era(era, { width: "wide" });
-    }
-  },
-  // Year
-  y: function(date, token2, localize2) {
-    if (token2 === "yo") {
-      const signedYear = date.getFullYear();
-      const year = signedYear > 0 ? signedYear : 1 - signedYear;
-      return localize2.ordinalNumber(year, { unit: "year" });
-    }
-    return lightFormatters.y(date, token2);
-  },
-  // Local week-numbering year
-  Y: function(date, token2, localize2, options) {
-    const signedWeekYear = getWeekYear(date, options);
-    const weekYear = signedWeekYear > 0 ? signedWeekYear : 1 - signedWeekYear;
-    if (token2 === "YY") {
-      const twoDigitYear = weekYear % 100;
-      return addLeadingZeros(twoDigitYear, 2);
-    }
-    if (token2 === "Yo") {
-      return localize2.ordinalNumber(weekYear, { unit: "year" });
-    }
-    return addLeadingZeros(weekYear, token2.length);
-  },
-  // ISO week-numbering year
-  R: function(date, token2) {
-    const isoWeekYear = getISOWeekYear(date);
-    return addLeadingZeros(isoWeekYear, token2.length);
-  },
-  // Extended year. This is a single number designating the year of this calendar system.
-  // The main difference between `y` and `u` localizers are B.C. years:
-  // | Year | `y` | `u` |
-  // |------|-----|-----|
-  // | AC 1 |   1 |   1 |
-  // | BC 1 |   1 |   0 |
-  // | BC 2 |   2 |  -1 |
-  // Also `yy` always returns the last two digits of a year,
-  // while `uu` pads single digit years to 2 characters and returns other years unchanged.
-  u: function(date, token2) {
-    const year = date.getFullYear();
-    return addLeadingZeros(year, token2.length);
-  },
-  // Quarter
-  Q: function(date, token2, localize2) {
-    const quarter = Math.ceil((date.getMonth() + 1) / 3);
-    switch (token2) {
-      case "Q":
-        return String(quarter);
-      case "QQ":
-        return addLeadingZeros(quarter, 2);
-      case "Qo":
-        return localize2.ordinalNumber(quarter, { unit: "quarter" });
-      case "QQQ":
-        return localize2.quarter(quarter, {
-          width: "abbreviated",
-          context: "formatting"
-        });
-      case "QQQQQ":
-        return localize2.quarter(quarter, {
-          width: "narrow",
-          context: "formatting"
-        });
-      case "QQQQ":
-      default:
-        return localize2.quarter(quarter, {
-          width: "wide",
-          context: "formatting"
-        });
-    }
-  },
-  // Stand-alone quarter
-  q: function(date, token2, localize2) {
-    const quarter = Math.ceil((date.getMonth() + 1) / 3);
-    switch (token2) {
-      case "q":
-        return String(quarter);
-      case "qq":
-        return addLeadingZeros(quarter, 2);
-      case "qo":
-        return localize2.ordinalNumber(quarter, { unit: "quarter" });
-      case "qqq":
-        return localize2.quarter(quarter, {
-          width: "abbreviated",
-          context: "standalone"
-        });
-      case "qqqqq":
-        return localize2.quarter(quarter, {
-          width: "narrow",
-          context: "standalone"
-        });
-      case "qqqq":
-      default:
-        return localize2.quarter(quarter, {
-          width: "wide",
-          context: "standalone"
-        });
-    }
-  },
-  // Month
-  M: function(date, token2, localize2) {
-    const month = date.getMonth();
-    switch (token2) {
-      case "M":
-      case "MM":
-        return lightFormatters.M(date, token2);
-      case "Mo":
-        return localize2.ordinalNumber(month + 1, { unit: "month" });
-      case "MMM":
-        return localize2.month(month, {
-          width: "abbreviated",
-          context: "formatting"
-        });
-      case "MMMMM":
-        return localize2.month(month, {
-          width: "narrow",
-          context: "formatting"
-        });
-      case "MMMM":
-      default:
-        return localize2.month(month, { width: "wide", context: "formatting" });
-    }
-  },
-  // Stand-alone month
-  L: function(date, token2, localize2) {
-    const month = date.getMonth();
-    switch (token2) {
-      case "L":
-        return String(month + 1);
-      case "LL":
-        return addLeadingZeros(month + 1, 2);
-      case "Lo":
-        return localize2.ordinalNumber(month + 1, { unit: "month" });
-      case "LLL":
-        return localize2.month(month, {
-          width: "abbreviated",
-          context: "standalone"
-        });
-      case "LLLLL":
-        return localize2.month(month, {
-          width: "narrow",
-          context: "standalone"
-        });
-      case "LLLL":
-      default:
-        return localize2.month(month, { width: "wide", context: "standalone" });
-    }
-  },
-  // Local week of year
-  w: function(date, token2, localize2, options) {
-    const week = getWeek(date, options);
-    if (token2 === "wo") {
-      return localize2.ordinalNumber(week, { unit: "week" });
-    }
-    return addLeadingZeros(week, token2.length);
-  },
-  // ISO week of year
-  I: function(date, token2, localize2) {
-    const isoWeek = getISOWeek(date);
-    if (token2 === "Io") {
-      return localize2.ordinalNumber(isoWeek, { unit: "week" });
-    }
-    return addLeadingZeros(isoWeek, token2.length);
-  },
-  // Day of the month
-  d: function(date, token2, localize2) {
-    if (token2 === "do") {
-      return localize2.ordinalNumber(date.getDate(), { unit: "date" });
-    }
-    return lightFormatters.d(date, token2);
-  },
-  // Day of year
-  D: function(date, token2, localize2) {
-    const dayOfYear = getDayOfYear(date);
-    if (token2 === "Do") {
-      return localize2.ordinalNumber(dayOfYear, { unit: "dayOfYear" });
-    }
-    return addLeadingZeros(dayOfYear, token2.length);
-  },
-  // Day of week
-  E: function(date, token2, localize2) {
-    const dayOfWeek = date.getDay();
-    switch (token2) {
-      case "E":
-      case "EE":
-      case "EEE":
-        return localize2.day(dayOfWeek, {
-          width: "abbreviated",
-          context: "formatting"
-        });
-      case "EEEEE":
-        return localize2.day(dayOfWeek, {
-          width: "narrow",
-          context: "formatting"
-        });
-      case "EEEEEE":
-        return localize2.day(dayOfWeek, {
-          width: "short",
-          context: "formatting"
-        });
-      case "EEEE":
-      default:
-        return localize2.day(dayOfWeek, {
-          width: "wide",
-          context: "formatting"
-        });
-    }
-  },
-  // Local day of week
-  e: function(date, token2, localize2, options) {
-    const dayOfWeek = date.getDay();
-    const localDayOfWeek = (dayOfWeek - options.weekStartsOn + 8) % 7 || 7;
-    switch (token2) {
-      case "e":
-        return String(localDayOfWeek);
-      case "ee":
-        return addLeadingZeros(localDayOfWeek, 2);
-      case "eo":
-        return localize2.ordinalNumber(localDayOfWeek, { unit: "day" });
-      case "eee":
-        return localize2.day(dayOfWeek, {
-          width: "abbreviated",
-          context: "formatting"
-        });
-      case "eeeee":
-        return localize2.day(dayOfWeek, {
-          width: "narrow",
-          context: "formatting"
-        });
-      case "eeeeee":
-        return localize2.day(dayOfWeek, {
-          width: "short",
-          context: "formatting"
-        });
-      case "eeee":
-      default:
-        return localize2.day(dayOfWeek, {
-          width: "wide",
-          context: "formatting"
-        });
-    }
-  },
-  // Stand-alone local day of week
-  c: function(date, token2, localize2, options) {
-    const dayOfWeek = date.getDay();
-    const localDayOfWeek = (dayOfWeek - options.weekStartsOn + 8) % 7 || 7;
-    switch (token2) {
-      case "c":
-        return String(localDayOfWeek);
-      case "cc":
-        return addLeadingZeros(localDayOfWeek, token2.length);
-      case "co":
-        return localize2.ordinalNumber(localDayOfWeek, { unit: "day" });
-      case "ccc":
-        return localize2.day(dayOfWeek, {
-          width: "abbreviated",
-          context: "standalone"
-        });
-      case "ccccc":
-        return localize2.day(dayOfWeek, {
-          width: "narrow",
-          context: "standalone"
-        });
-      case "cccccc":
-        return localize2.day(dayOfWeek, {
-          width: "short",
-          context: "standalone"
-        });
-      case "cccc":
-      default:
-        return localize2.day(dayOfWeek, {
-          width: "wide",
-          context: "standalone"
-        });
-    }
-  },
-  // ISO day of week
-  i: function(date, token2, localize2) {
-    const dayOfWeek = date.getDay();
-    const isoDayOfWeek = dayOfWeek === 0 ? 7 : dayOfWeek;
-    switch (token2) {
-      case "i":
-        return String(isoDayOfWeek);
-      case "ii":
-        return addLeadingZeros(isoDayOfWeek, token2.length);
-      case "io":
-        return localize2.ordinalNumber(isoDayOfWeek, { unit: "day" });
-      case "iii":
-        return localize2.day(dayOfWeek, {
-          width: "abbreviated",
-          context: "formatting"
-        });
-      case "iiiii":
-        return localize2.day(dayOfWeek, {
-          width: "narrow",
-          context: "formatting"
-        });
-      case "iiiiii":
-        return localize2.day(dayOfWeek, {
-          width: "short",
-          context: "formatting"
-        });
-      case "iiii":
-      default:
-        return localize2.day(dayOfWeek, {
-          width: "wide",
-          context: "formatting"
-        });
-    }
-  },
-  // AM or PM
-  a: function(date, token2, localize2) {
-    const hours = date.getHours();
-    const dayPeriodEnumValue = hours / 12 >= 1 ? "pm" : "am";
-    switch (token2) {
-      case "a":
-      case "aa":
-        return localize2.dayPeriod(dayPeriodEnumValue, {
-          width: "abbreviated",
-          context: "formatting"
-        });
-      case "aaa":
-        return localize2.dayPeriod(dayPeriodEnumValue, {
-          width: "abbreviated",
-          context: "formatting"
-        }).toLowerCase();
-      case "aaaaa":
-        return localize2.dayPeriod(dayPeriodEnumValue, {
-          width: "narrow",
-          context: "formatting"
-        });
-      case "aaaa":
-      default:
-        return localize2.dayPeriod(dayPeriodEnumValue, {
-          width: "wide",
-          context: "formatting"
-        });
-    }
-  },
-  // AM, PM, midnight, noon
-  b: function(date, token2, localize2) {
-    const hours = date.getHours();
-    let dayPeriodEnumValue;
-    if (hours === 12) {
-      dayPeriodEnumValue = dayPeriodEnum.noon;
-    } else if (hours === 0) {
-      dayPeriodEnumValue = dayPeriodEnum.midnight;
-    } else {
-      dayPeriodEnumValue = hours / 12 >= 1 ? "pm" : "am";
-    }
-    switch (token2) {
-      case "b":
-      case "bb":
-        return localize2.dayPeriod(dayPeriodEnumValue, {
-          width: "abbreviated",
-          context: "formatting"
-        });
-      case "bbb":
-        return localize2.dayPeriod(dayPeriodEnumValue, {
-          width: "abbreviated",
-          context: "formatting"
-        }).toLowerCase();
-      case "bbbbb":
-        return localize2.dayPeriod(dayPeriodEnumValue, {
-          width: "narrow",
-          context: "formatting"
-        });
-      case "bbbb":
-      default:
-        return localize2.dayPeriod(dayPeriodEnumValue, {
-          width: "wide",
-          context: "formatting"
-        });
-    }
-  },
-  // in the morning, in the afternoon, in the evening, at night
-  B: function(date, token2, localize2) {
-    const hours = date.getHours();
-    let dayPeriodEnumValue;
-    if (hours >= 17) {
-      dayPeriodEnumValue = dayPeriodEnum.evening;
-    } else if (hours >= 12) {
-      dayPeriodEnumValue = dayPeriodEnum.afternoon;
-    } else if (hours >= 4) {
-      dayPeriodEnumValue = dayPeriodEnum.morning;
-    } else {
-      dayPeriodEnumValue = dayPeriodEnum.night;
-    }
-    switch (token2) {
-      case "B":
-      case "BB":
-      case "BBB":
-        return localize2.dayPeriod(dayPeriodEnumValue, {
-          width: "abbreviated",
-          context: "formatting"
-        });
-      case "BBBBB":
-        return localize2.dayPeriod(dayPeriodEnumValue, {
-          width: "narrow",
-          context: "formatting"
-        });
-      case "BBBB":
-      default:
-        return localize2.dayPeriod(dayPeriodEnumValue, {
-          width: "wide",
-          context: "formatting"
-        });
-    }
-  },
-  // Hour [1-12]
-  h: function(date, token2, localize2) {
-    if (token2 === "ho") {
-      let hours = date.getHours() % 12;
-      if (hours === 0) hours = 12;
-      return localize2.ordinalNumber(hours, { unit: "hour" });
-    }
-    return lightFormatters.h(date, token2);
-  },
-  // Hour [0-23]
-  H: function(date, token2, localize2) {
-    if (token2 === "Ho") {
-      return localize2.ordinalNumber(date.getHours(), { unit: "hour" });
-    }
-    return lightFormatters.H(date, token2);
-  },
-  // Hour [0-11]
-  K: function(date, token2, localize2) {
-    const hours = date.getHours() % 12;
-    if (token2 === "Ko") {
-      return localize2.ordinalNumber(hours, { unit: "hour" });
-    }
-    return addLeadingZeros(hours, token2.length);
-  },
-  // Hour [1-24]
-  k: function(date, token2, localize2) {
-    let hours = date.getHours();
-    if (hours === 0) hours = 24;
-    if (token2 === "ko") {
-      return localize2.ordinalNumber(hours, { unit: "hour" });
-    }
-    return addLeadingZeros(hours, token2.length);
-  },
-  // Minute
-  m: function(date, token2, localize2) {
-    if (token2 === "mo") {
-      return localize2.ordinalNumber(date.getMinutes(), { unit: "minute" });
-    }
-    return lightFormatters.m(date, token2);
-  },
-  // Second
-  s: function(date, token2, localize2) {
-    if (token2 === "so") {
-      return localize2.ordinalNumber(date.getSeconds(), { unit: "second" });
-    }
-    return lightFormatters.s(date, token2);
-  },
-  // Fraction of second
-  S: function(date, token2) {
-    return lightFormatters.S(date, token2);
-  },
-  // Timezone (ISO-8601. If offset is 0, output is always `'Z'`)
-  X: function(date, token2, _localize) {
-    const timezoneOffset = date.getTimezoneOffset();
-    if (timezoneOffset === 0) {
-      return "Z";
-    }
-    switch (token2) {
-      case "X":
-        return formatTimezoneWithOptionalMinutes(timezoneOffset);
-      case "XXXX":
-      case "XX":
-        return formatTimezone(timezoneOffset);
-      case "XXXXX":
-      case "XXX":
-      default:
-        return formatTimezone(timezoneOffset, ":");
-    }
-  },
-  // Timezone (ISO-8601. If offset is 0, output is `'+00:00'` or equivalent)
-  x: function(date, token2, _localize) {
-    const timezoneOffset = date.getTimezoneOffset();
-    switch (token2) {
-      case "x":
-        return formatTimezoneWithOptionalMinutes(timezoneOffset);
-      case "xxxx":
-      case "xx":
-        return formatTimezone(timezoneOffset);
-      case "xxxxx":
-      case "xxx":
-      default:
-        return formatTimezone(timezoneOffset, ":");
-    }
-  },
-  // Timezone (GMT)
-  O: function(date, token2, _localize) {
-    const timezoneOffset = date.getTimezoneOffset();
-    switch (token2) {
-      case "O":
-      case "OO":
-      case "OOO":
-        return "GMT" + formatTimezoneShort(timezoneOffset, ":");
-      case "OOOO":
-      default:
-        return "GMT" + formatTimezone(timezoneOffset, ":");
-    }
-  },
-  // Timezone (specific non-location)
-  z: function(date, token2, _localize) {
-    const timezoneOffset = date.getTimezoneOffset();
-    switch (token2) {
-      case "z":
-      case "zz":
-      case "zzz":
-        return "GMT" + formatTimezoneShort(timezoneOffset, ":");
-      case "zzzz":
-      default:
-        return "GMT" + formatTimezone(timezoneOffset, ":");
-    }
-  },
-  // Seconds timestamp
-  t: function(date, token2, _localize) {
-    const timestamp = Math.trunc(+date / 1e3);
-    return addLeadingZeros(timestamp, token2.length);
-  },
-  // Milliseconds timestamp
-  T: function(date, token2, _localize) {
-    return addLeadingZeros(+date, token2.length);
-  }
-};
-function formatTimezoneShort(offset, delimiter2 = "") {
-  const sign2 = offset > 0 ? "-" : "+";
-  const absOffset = Math.abs(offset);
-  const hours = Math.trunc(absOffset / 60);
-  const minutes = absOffset % 60;
-  if (minutes === 0) {
-    return sign2 + String(hours);
-  }
-  return sign2 + String(hours) + delimiter2 + addLeadingZeros(minutes, 2);
-}
-function formatTimezoneWithOptionalMinutes(offset, delimiter2) {
-  if (offset % 60 === 0) {
-    const sign2 = offset > 0 ? "-" : "+";
-    return sign2 + addLeadingZeros(Math.abs(offset) / 60, 2);
-  }
-  return formatTimezone(offset, delimiter2);
-}
-function formatTimezone(offset, delimiter2 = "") {
-  const sign2 = offset > 0 ? "-" : "+";
-  const absOffset = Math.abs(offset);
-  const hours = addLeadingZeros(Math.trunc(absOffset / 60), 2);
-  const minutes = addLeadingZeros(absOffset % 60, 2);
-  return sign2 + hours + delimiter2 + minutes;
-}
-const dateLongFormatter = (pattern, formatLong2) => {
-  switch (pattern) {
-    case "P":
-      return formatLong2.date({ width: "short" });
-    case "PP":
-      return formatLong2.date({ width: "medium" });
-    case "PPP":
-      return formatLong2.date({ width: "long" });
-    case "PPPP":
-    default:
-      return formatLong2.date({ width: "full" });
-  }
-};
-const timeLongFormatter = (pattern, formatLong2) => {
-  switch (pattern) {
-    case "p":
-      return formatLong2.time({ width: "short" });
-    case "pp":
-      return formatLong2.time({ width: "medium" });
-    case "ppp":
-      return formatLong2.time({ width: "long" });
-    case "pppp":
-    default:
-      return formatLong2.time({ width: "full" });
-  }
-};
-const dateTimeLongFormatter = (pattern, formatLong2) => {
-  const matchResult = pattern.match(/(P+)(p+)?/) || [];
-  const datePattern = matchResult[1];
-  const timePattern = matchResult[2];
-  if (!timePattern) {
-    return dateLongFormatter(pattern, formatLong2);
-  }
-  let dateTimeFormat;
-  switch (datePattern) {
-    case "P":
-      dateTimeFormat = formatLong2.dateTime({ width: "short" });
-      break;
-    case "PP":
-      dateTimeFormat = formatLong2.dateTime({ width: "medium" });
-      break;
-    case "PPP":
-      dateTimeFormat = formatLong2.dateTime({ width: "long" });
-      break;
-    case "PPPP":
-    default:
-      dateTimeFormat = formatLong2.dateTime({ width: "full" });
-      break;
-  }
-  return dateTimeFormat.replace("{{date}}", dateLongFormatter(datePattern, formatLong2)).replace("{{time}}", timeLongFormatter(timePattern, formatLong2));
-};
-const longFormatters = {
-  p: timeLongFormatter,
-  P: dateTimeLongFormatter
-};
-const dayOfYearTokenRE = /^D+$/;
-const weekYearTokenRE = /^Y+$/;
-const throwTokens = ["D", "DD", "YY", "YYYY"];
-function isProtectedDayOfYearToken(token2) {
-  return dayOfYearTokenRE.test(token2);
-}
-function isProtectedWeekYearToken(token2) {
-  return weekYearTokenRE.test(token2);
-}
-function warnOrThrowProtectedError(token2, format2, input) {
-  const _message = message(token2, format2, input);
-  console.warn(_message);
-  if (throwTokens.includes(token2)) throw new RangeError(_message);
-}
-function message(token2, format2, input) {
-  const subject = token2[0] === "Y" ? "years" : "days of the month";
-  return `Use \`${token2.toLowerCase()}\` instead of \`${token2}\` (in \`${format2}\`) for formatting ${subject} to the input \`${input}\`; see: https://github.com/date-fns/date-fns/blob/master/docs/unicodeTokens.md`;
-}
-const formattingTokensRegExp = /[yYQqMLwIdDecihHKkms]o|(\w)\1*|''|'(''|[^'])+('|$)|./g;
-const longFormattingTokensRegExp = /P+p+|P+|p+|''|'(''|[^'])+('|$)|./g;
-const escapedStringRegExp = /^'([^]*?)'?$/;
-const doubleQuoteRegExp = /''/g;
-const unescapedLatinCharacterRegExp = /[a-zA-Z]/;
-function format$2(date, formatStr, options) {
-  var _a2, _b2, _c, _d;
-  const defaultOptions2 = getDefaultOptions();
-  const locale = defaultOptions2.locale ?? enUS;
-  const firstWeekContainsDate = defaultOptions2.firstWeekContainsDate ?? ((_b2 = (_a2 = defaultOptions2.locale) == null ? void 0 : _a2.options) == null ? void 0 : _b2.firstWeekContainsDate) ?? 1;
-  const weekStartsOn = defaultOptions2.weekStartsOn ?? ((_d = (_c = defaultOptions2.locale) == null ? void 0 : _c.options) == null ? void 0 : _d.weekStartsOn) ?? 0;
-  const originalDate = toDate(date, options == null ? void 0 : options.in);
-  if (!isValid(originalDate)) {
-    throw new RangeError("Invalid time value");
-  }
-  let parts = formatStr.match(longFormattingTokensRegExp).map((substring) => {
-    const firstCharacter = substring[0];
-    if (firstCharacter === "p" || firstCharacter === "P") {
-      const longFormatter = longFormatters[firstCharacter];
-      return longFormatter(substring, locale.formatLong);
-    }
-    return substring;
-  }).join("").match(formattingTokensRegExp).map((substring) => {
-    if (substring === "''") {
-      return { isToken: false, value: "'" };
-    }
-    const firstCharacter = substring[0];
-    if (firstCharacter === "'") {
-      return { isToken: false, value: cleanEscapedString(substring) };
-    }
-    if (formatters[firstCharacter]) {
-      return { isToken: true, value: substring };
-    }
-    if (firstCharacter.match(unescapedLatinCharacterRegExp)) {
-      throw new RangeError(
-        "Format string contains an unescaped latin alphabet character `" + firstCharacter + "`"
-      );
-    }
-    return { isToken: false, value: substring };
-  });
-  if (locale.localize.preprocessor) {
-    parts = locale.localize.preprocessor(originalDate, parts);
-  }
-  const formatterOptions = {
-    firstWeekContainsDate,
-    weekStartsOn,
-    locale
-  };
-  return parts.map((part) => {
-    if (!part.isToken) return part.value;
-    const token2 = part.value;
-    if (isProtectedWeekYearToken(token2) || isProtectedDayOfYearToken(token2)) {
-      warnOrThrowProtectedError(token2, formatStr, String(date));
-    }
-    const formatter = formatters[token2[0]];
-    return formatter(originalDate, token2, locale.localize, formatterOptions);
-  }).join("");
-}
-function cleanEscapedString(input) {
-  const matched = input.match(escapedStringRegExp);
-  if (!matched) {
-    return input;
-  }
-  return matched[1].replace(doubleQuoteRegExp, "'");
-}
-function isSameYear(laterDate, earlierDate, options) {
-  const [laterDate_, earlierDate_] = normalizeDates(
-    options == null ? void 0 : options.in,
-    laterDate,
-    earlierDate
-  );
-  return laterDate_.getFullYear() === earlierDate_.getFullYear();
-}
-function isThisYear(date, options) {
-  return isSameYear(
-    constructFrom(date, date),
-    constructNow(date)
-  );
-}
-function isToday(date, options) {
-  return isSameDay(
-    constructFrom(date, date),
-    constructNow(date)
-  );
-}
-const arrayToString = (val) => {
-  val = Array.isArray(val) ? val : [val];
-  return val.join(", ");
-};
-const inputString = (input) => {
-  if (typeof input === "string") {
-    return [input];
-  } else {
-    return input.map((inp) => {
-      if (typeof inp === "string") {
-        return inp;
-      } else {
-        const content = inp.content;
-        if (typeof content === "string") {
-          return content;
-        } else {
-          const result = content.map((con) => {
-            if (con.type === "text") {
-              return con.text;
-            } else {
-              return "";
-            }
-          });
-          return result.join("\n");
-        }
-      }
-    });
-  }
-};
-const formatDataset = (name, samples, epochs) => {
-  const perEpochSamples = epochs > 0 ? samples / epochs : samples;
-  return `${name ? "— " : ""}${perEpochSamples + " "}${epochs > 1 ? `x ${epochs} ` : ""}${samples === 1 ? "sample" : "samples"}`;
-};
-const formatTime = (seconds) => {
-  if (seconds < 60) {
-    return `${seconds} sec`;
-  } else if (seconds < 60 * 60) {
-    return `${Math.floor(seconds / 60)} min ${seconds % 60} sec`;
-  } else {
-    return `${Math.floor(seconds / (60 * 60 * 24))} days ${Math.floor(
-      seconds / 60
-    )} min ${seconds % 60} sec`;
-  }
-};
-function formatPrettyDecimal(num) {
-  const numDecimalPlaces = num.toString().includes(".") ? num.toString().split(".")[1].length : 0;
-  if (numDecimalPlaces === 0) {
-    return num.toFixed(1);
-  } else if (numDecimalPlaces > 3) {
-    return num.toFixed(3);
-  } else {
-    return num.toString();
-  }
-}
-function formatDecimalNoTrailingZeroes(num) {
-  if (typeof num !== "number") {
-    return num;
-  }
-  if (num.toString().includes(".")) {
-    const decimal = num.toString().split(".")[1];
-    const trimmed = decimal.replace(/\.?0+$/, "");
-    return num.toFixed(trimmed.length);
-  } else {
-    return num.toFixed(0);
-  }
-}
-function toTitleCase(str) {
-  return str.split(" ").map((w2) => w2[0].toUpperCase() + w2.substr(1).toLowerCase()).join(" ");
-}
-function formatNoDecimal(num) {
-  if (typeof num !== "number") {
-    return num;
-  }
-  const rounded = Math.round(num);
-  return rounded.toFixed(0);
-}
-function formatNumber(num) {
-  return num.toLocaleString(navigator.language, {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 5
-  });
-}
-function formatPrettyDateTime(date) {
-  if (isToday(date)) {
-    return `Today, ${format$2(date, "h:mmaaa")}`;
-  }
-  if (isThisYear(date)) {
-    return format$2(date, "MMM d, h:mmaaa");
-  }
-  return format$2(date, "MMM d yyyy, h:mmaaa");
-}
-const filename = (path) => {
-  const pathparts = path.split("/");
-  const basename = pathparts.slice(-1)[0];
-  const match3 = basename.match(/(.*)\.\S+$/);
-  if (match3) {
-    return match3[1];
-  } else {
-    return path;
-  }
-};
-const dirname = (path) => {
-  const pathparts = path.split("/");
-  if (pathparts.length > 1) {
-    pathparts.pop();
-  }
-  return pathparts.join("/");
-};
-const clearDocumentSelection = () => {
-  const sel = window.getSelection();
-  if (sel) {
-    if (sel.removeAllRanges) {
-      sel.removeAllRanges();
-    } else if (sel.empty) {
-      sel.empty();
-    }
-  }
-};
 const ApplicationIcons = {
   approve: "bi bi-shield",
   approvals: {
@@ -4217,88 +2644,6 @@ const TextStyle = {
     color: "var(--bs-secondary)"
   }
 };
-const ErrorPanel = ({ id, classes, title, error: error2 }) => {
-  const emptyStyle = {
-    display: "flex",
-    flex: "0 0 content",
-    alignItems: "center",
-    justifyContent: "center"
-  };
-  const message2 = error2.message;
-  const stack2 = error2.stack;
-  return m$1`
-    <div style=${{ overflowY: "auto", height: "100vh" }}>
-      <div
-        ...${{ id }}
-        class="${classes ? classes : ""}"
-        style=${{
-    ...emptyStyle,
-    flexDirection: "column",
-    minHeight: "10rem",
-    marginTop: "4rem",
-    marginBottom: "4em",
-    width: "100vw"
-  }}
-      >
-        <div style=${{ ...emptyStyle, fontSize: FontSize.larger }}>
-          <div>
-            <i
-              class="${ApplicationIcons.error}"
-              style="${{ marginRight: "0.5rem", color: "var(--bs-red)" }}"
-            ></i>
-          </div>
-          <div>${title || ""}</div>
-        </div>
-        <div
-          style=${{
-    display: "inline-block",
-    fontSize: FontSize.smaller,
-    marginTop: "1rem",
-    border: "solid 1px var(--bs-border-color)",
-    borderRadius: "var(--bs-border-radius)",
-    padding: "1em",
-    maxWidth: "80%"
-  }}
-        >
-          <div>
-            Error: ${message2 || ""}
-            ${stack2 && m$1`
-              <pre
-                style=${{ fontSize: FontSize.smaller, whiteSpace: "pre-wrap" }}
-              >
-            <code>
-              at ${stack2}
-            </code>
-          </pre>
-            `}
-          </div>
-        </div>
-      </div>
-    </div>
-  `;
-};
-class AppErrorBoundary extends k$1 {
-  constructor(props) {
-    super(props);
-    this.state = { hasError: false };
-  }
-  static getDerivedStateFromError(error2) {
-    return { hasError: true, error: error2 };
-  }
-  componentDidCatch(error2, errorInfo) {
-    console.log({ error: error2, errorInfo });
-  }
-  render() {
-    if (this.state.hasError) {
-      console.error({ e: this.state.error });
-      return m$1`<${ErrorPanel}
-        title="An unexpected error occurred."
-        error="${this.state.error}"
-      />`;
-    }
-    return this.props.children;
-  }
-}
 const ProgressBar = ({ style, containerStyle, animating }) => {
   const emptyStyle = {
     display: "flex",
@@ -4342,1025 +2687,134 @@ const ProgressBar = ({ style, containerStyle, animating }) => {
     </div>
   `;
 };
-const EmptyPanel = ({ id, classes, height, style, children }) => {
-  const emptyStyle = {
-    display: "flex",
-    textAlign: "center",
-    flex: "0 0 content",
-    alignItems: "center",
-    justifyContent: "center",
-    height: height ? height : "10rem"
-  };
-  return m$1`
-    <div
-      ...${{ id }}
-      class="${classes ? classes : ""}"
-      style=${{ width: "100%" }}
+const LargeModal = (props) => {
+  const {
+    id,
+    title,
+    detail,
+    detailTools,
+    footer,
+    onkeyup,
+    visible,
+    onHide,
+    showProgress,
+    children
+  } = props;
+  const modalFooter = footer ? m$1`<div class="modal-footer">${footer}</div>` : "";
+  const headerEls = [];
+  headerEls.push(
+    m$1`<div
+      class="modal-title"
+      style=${{ fontSize: FontSize.smaller, flex: "1 1 auto" }}
     >
-      <div style=${{ ...emptyStyle, ...style }}>
-        <div>${children || ""}</div>
+      ${title || ""}
+    </div>`
+  );
+  if (detail) {
+    headerEls.push(
+      m$1`<div
+        style=${{
+        marginLeft: "auto",
+        marginRight: "auto",
+        display: "flex",
+        flex: "1 1 auto",
+        justifyContent: "center"
+      }}
+      >
+        ${detailTools.left ? detailTools.left.map((tool) => {
+        return m$1`<${TitleTool} ...${tool} />`;
+      }) : ""}
+        <div
+          style=${{
+        fontSize: FontSize.smaller,
+        display: "flex",
+        alignItems: "center"
+      }}
+        >
+          <div>${detail}</div>
+        </div>
+        ${detailTools.right ? detailTools.right.map((tool) => {
+        return m$1`<${TitleTool} ...${tool} />`;
+      }) : ""}
+      </div>`
+    );
+  }
+  headerEls.push(m$1`<button
+      type="button"
+      class="btn btn-close-large-dialog"
+      onclick=${() => {
+    onHide();
+  }}
+      aria-label="Close"
+      style=${{
+    borderWidth: "0px",
+    fontSize: FontSize.larger,
+    fontWeight: "300",
+    padding: "0em 0.5em",
+    flex: 1,
+    textAlign: "right"
+  }}
+    >
+      <${HtmlEntity}>&times;</${HtmlEntity}>
+    </button>`);
+  return m$1`<div
+    id=${id}
+    class="modal"
+    tabindex="0"
+    role="dialog"
+    onkeyup=${onkeyup}
+    style=${{
+    borderRadius: "var(--bs-border-radius)",
+    display: visible ? "block" : "none"
+  }}
+    tabindex=${visible ? 0 : void 0}
+  >
+    <div
+      class="modal-dialog modal-dialog-scrollable"
+      style=${{
+    maxWidth: "100%",
+    marginLeft: "var(--bs-modal-margin)",
+    marginRight: "var(--bs-modal-margin)"
+  }}
+      role="document"
+    >
+      <div class="modal-content" style=${{ height: "100%" }}>
+        <div
+          class="modal-header"
+          style=${{ padding: "0 0 0 1em", display: "flex" }}
+        >
+          ${headerEls}
+        </div>
+        <${ProgressBar}
+          animating=${showProgress}
+          containerStyle=${{
+    marginBottom: "-2px",
+    backgroundColor: "var(--bs-body-bg)"
+  }}
+        />
+        <div class="modal-body">${children}</div>
+        ${modalFooter}
       </div>
     </div>
-  `;
+  </div>`;
 };
-const TabSet = ({ id, type, classes, tools, styles, children }) => {
-  if (!id) {
-    throw new Error("Tabsets require an id to function properly");
-  }
-  const tabs = children;
-  const tabType = type || "tabs";
-  const tabSetStyle = {
-    alignItems: "space-between"
-  };
-  return m$1`<ul
-      ...${{ id }}
-      class="nav nav-${tabType} ${classes ? classes : ""}"
-      role="tablist"
-      aria-orientation="horizontal"
-      style=${{ ...tabSetStyle, ...styles.tabSet }}
-    >
-      <${Tabs} tabs=${tabs} type=${tabType} style=${styles.tabs} />
-      <${TabTools} tools=${tools} />
-    </ul>
-    <${TabPanels} id=${id} tabs=${tabs} style=${styles.tabBody} />`;
-};
-const TabPanel = ({
-  id,
-  index,
-  selected,
-  style,
-  scrollable,
-  classes,
-  children
-}) => {
-  const tabContentsId = computeTabContentsId(id, index);
-  return m$1`<div
-    id="${tabContentsId}"
-    class="tab-pane show${selected ? " active" : ""}${classes ? ` ${classes}` : ""}"
+const HtmlEntity = ({ children }) => m$1`<span dangerouslySetInnerHTML=${{ __html: children }} />`;
+const TitleTool = ({ label, icon, enabled, onclick }) => {
+  return m$1`<button
+    type="button"
+    class="btn btn-outline"
+    aria-label=${label}
+    onclick=${onclick}
+    disabled=${!enabled}
     style=${{
-    flex: "1",
-    overflowY: scrollable === void 0 || scrollable ? "auto" : "hidden",
-    ...style
+    paddingTop: 0,
+    paddingBottom: 0,
+    border: "none",
+    fontSize: FontSize.small
   }}
   >
-    ${children}
-  </div>`;
-};
-const Tabs = ({ tabs, type, style }) => {
-  return tabs.map((tab, index) => {
-    return m$1` <${Tab}
-      type=${type || "tabs"}
-      tab=${tab}
-      index=${index}
-      style=${style}
-    />`;
-  });
-};
-const Tab = ({ type, tab, index, style }) => {
-  const tabId = tab.props.id || computeTabId("tabset", index);
-  const tabContentsId = computeTabContentsId(tab.props.id, index);
-  const isActive = tab.props.selected;
-  const tabStyle = {
-    color: "var(--bs-body-color)",
-    ...style,
-    padding: "0.25rem 0.5rem",
-    borderTopLeftRadius: "var(--bs-border-radius)",
-    borderTopRightRadius: "var(--bs-border-radius)",
-    ...TextStyle.label,
-    fontSize: FontSize.small,
-    fontWeight: 500,
-    marginTop: "2px",
-    marginBottom: "-1px"
-  };
-  const pillStyle = {
-    ...style
-  };
-  return m$1`
-    <li class="nav-item" role="presentation" style=${{ alignSelf: "end" }}>
-      <button
-        id="${tabId}"
-        style=${type === "tabs" ? tabStyle : pillStyle}
-        class="nav-link ${isActive ? "active" : ""}"
-        data-bs-toggle="tab"
-        data-bs-target="#${tabContentsId}"
-        type="button"
-        role="tab"
-        aria-controls="${tabContentsId}"
-        aria-selected="${isActive ? true : false}"
-        ...${{
-    onclick: (e2) => {
-      tab.props.onSelected(e2);
-      return false;
-    }
-  }}
-      >
-        ${tab.props.icon ? m$1`<i
-              class="${tab.props.icon}"
-              style=${{ marginRight: "0.5em" }}
-            ></i>` : ""}
-        ${tab.props.title}
-      </button>
-    </li>
-  `;
-};
-const TabTools = ({ tools }) => {
-  return m$1`<div
-    class="tab-tools"
-    style=${{
-    flexBasis: "auto",
-    marginLeft: "auto",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "end",
-    flexWrap: "wrap",
-    rowGap: "0.3rem"
-  }}
-  >
-    ${tools}
-  </div>`;
-};
-const TabPanels = ({ id, tabs, style }) => {
-  return m$1`<div class="tab-content" id="${id}-content" style=${{ ...style }}>
-    ${tabs.map((tab, index) => {
-    tab.props.index = index;
-    return tab;
-  })}
-  </div>`;
-};
-const computeTabId = (id, index) => {
-  return `${id}-${index}`;
-};
-const computeTabContentsId = (id, index) => {
-  return `${id}-contents-${index}`;
-};
-const ToolButton = ({ name, classes, icon, onclick, ...rest }) => {
-  const attr = {
-    type: "button",
-    class: `btn btn-tools ${classes || ""}`,
-    onclick,
-    ...rest
-  };
-  const iconEl = icon ? m$1`<i class="${icon}" style=${{ marginRight: "0.5em" }}></i>` : "";
-  return _("button", attr, m$1`${iconEl}${name}`);
-};
-const ghCommitUrl = (origin, commit) => {
-  const baseUrl = origin.replace(/\.git$/, "");
-  return `${baseUrl}/commit/${commit}`;
-};
-const CardHeader = ({ id, icon, label, classes, style, children }) => {
-  return m$1`<div
-    class="${classes || ""}"
-    ...${{ id }}
-    style=${{
-    display: "grid",
-    gridTemplateColumns: "max-content auto",
-    columnGap: "0em",
-    padding: "0.5em 0.5em 0.5em 0.5em",
-    fontSize: FontSize.small,
-    fontWeight: 600,
-    ...TextStyle.label,
-    ...style
-  }}
-  >
-    ${icon ? m$1`<i
-          class="${icon}"
-          style=${{
-    paddingRight: "0.2rem"
-  }}
-        ></i>` : m$1`<span
-          style=${{
-    paddingRight: "0.2rem"
-  }}
-        ></span>`}
-    ${label ? label : ""} ${children}
-  </div> `;
-};
-const CardBody = ({ id, classes, style, children }) => {
-  return m$1`<div
-    class="${classes || ""}"
-    ...${{ id }}
-    style=${{
-    backgroundColor: "var(--bs-body-bg)",
-    border: "solid 1px var(--bs-light-border-subtle)",
-    borderRadius: "var(--bs-border-radius)",
-    margin: "0 8px 8px 8px",
-    padding: "0.5em",
-    ...style
-  }}
-  >
-    ${children}
-  </div>`;
-};
-const Card = ({ id, classes, style, children }) => {
-  return m$1`
-    <div
-      class="${classes || ""}"
-      ...${{ id }}
-      style=${{
-    backgroundColor: "var(--bs-light-bg-subtle)",
-    border: "solid 1px var(--bs-light-border-subtle)",
-    borderRadius: "var(--bs-border-radius)",
-    marginBottom: "1.5em",
-    ...style
-  }}
-    >
-      ${children}
-    </div>
-  `;
-};
-var e, t, r = {
-  exports: {}
-};
-e = r, t = function(e2, t2) {
-  Object.defineProperty(t2, "__esModule", {
-    value: true
-  }), t2.ANSIOutput = t2.ANSIColor = t2.ANSIFont = t2.ANSIStyle = void 0;
-  let r2 = 0;
-  const n2 = () => ("" + ++r2).padStart(16, "0");
-  var o2, i, s2, a2, u2, l2, g2;
-  (function(e3) {
-    e3.Bold = "ansiBold", e3.Dim = "ansiDim", e3.Italic = "ansiItalic", e3.Underlined = "ansiUnderlined", e3.SlowBlink = "ansiSlowBlink", e3.RapidBlink = "ansiRapidBlink", e3.Hidden = "ansiHidden", e3.CrossedOut = "ansiCrossedOut", e3.Fraktur = "ansiFraktur", e3.DoubleUnderlined = "ansiDoubleUnderlined", e3.Framed = "ansiFramed", e3.Encircled = "ansiEncircled", e3.Overlined = "ansiOverlined", e3.Superscript = "ansiSuperscript", e3.Subscript = "ansiSubscript";
-  })(o2 || (t2.ANSIStyle = o2 = {})), function(e3) {
-    e3.AlternativeFont1 = "ansiAlternativeFont1", e3.AlternativeFont2 = "ansiAlternativeFont2", e3.AlternativeFont3 = "ansiAlternativeFont3", e3.AlternativeFont4 = "ansiAlternativeFont4", e3.AlternativeFont5 = "ansiAlternativeFont5", e3.AlternativeFont6 = "ansiAlternativeFont6", e3.AlternativeFont7 = "ansiAlternativeFont7", e3.AlternativeFont8 = "ansiAlternativeFont8", e3.AlternativeFont9 = "ansiAlternativeFont9";
-  }(i || (t2.ANSIFont = i = {})), function(e3) {
-    e3.Black = "ansiBlack", e3.Red = "ansiRed", e3.Green = "ansiGreen", e3.Yellow = "ansiYellow", e3.Blue = "ansiBlue", e3.Magenta = "ansiMagenta", e3.Cyan = "ansiCyan", e3.White = "ansiWhite", e3.BrightBlack = "ansiBrightBlack", e3.BrightRed = "ansiBrightRed", e3.BrightGreen = "ansiBrightGreen", e3.BrightYellow = "ansiBrightYellow", e3.BrightBlue = "ansiBrightBlue", e3.BrightMagenta = "ansiBrightMagenta", e3.BrightCyan = "ansiBrightCyan", e3.BrightWhite = "ansiBrightWhite";
-  }(s2 || (t2.ANSIColor = s2 = {}));
-  class h2 {
-    constructor() {
-      __publicField(this, "_parserState", g2.BufferingOutput);
-      __publicField(this, "_controlSequence", "");
-      __publicField(this, "_sgrState");
-      __publicField(this, "_outputLines", []);
-      __publicField(this, "_outputLine", 0);
-      __publicField(this, "_outputColumn", 0);
-      __publicField(this, "_buffer", "");
-      __publicField(this, "_pendingNewline", false);
-    }
-    get outputLines() {
-      return this.flushBuffer(), this._outputLines;
-    }
-    static processOutput(e3) {
-      const t3 = new h2();
-      return t3.processOutput(e3), t3.outputLines;
-    }
-    processOutput(e3) {
-      for (let t3 = 0; t3 < e3.length; t3++) {
-        this._pendingNewline && (this.flushBuffer(), this._outputLine++, this._outputColumn = 0, this._pendingNewline = false);
-        const r3 = e3.charAt(t3);
-        this._parserState === g2.BufferingOutput ? "\x1B" === r3 ? (this.flushBuffer(), this._parserState = g2.ControlSequenceStarted) : "" === r3 ? (this.flushBuffer(), this._parserState = g2.ParsingControlSequence) : this.processCharacter(r3) : this._parserState === g2.ControlSequenceStarted ? "[" === r3 ? this._parserState = g2.ParsingControlSequence : (this._parserState = g2.BufferingOutput, this.processCharacter(r3)) : this._parserState === g2.ParsingControlSequence && (this._controlSequence += r3, r3.match(/^[A-Za-z]$/) && this.processControlSequence());
-      }
-      this.flushBuffer();
-    }
-    flushBuffer() {
-      for (let e3 = this._outputLines.length; e3 < this._outputLine + 1; e3++) this._outputLines.push(new d2());
-      this._buffer && (this._outputLines[this._outputLine].insert(this._buffer, this._outputColumn, this._sgrState), this._outputColumn += this._buffer.length, this._buffer = "");
-    }
-    processCharacter(e3) {
-      switch (e3) {
-        case "\n":
-          this._pendingNewline = true;
-          break;
-        case "\r":
-          this.flushBuffer(), this._outputColumn = 0;
-          break;
-        default:
-          this._buffer += e3;
-      }
-    }
-    processControlSequence() {
-      switch (this._controlSequence.charAt(this._controlSequence.length - 1)) {
-        case "A":
-          this.processCUU();
-          break;
-        case "B":
-          this.processCUD();
-          break;
-        case "C":
-          this.processCUF();
-          break;
-        case "D":
-          this.processCUB();
-          break;
-        case "H":
-          this.processCUP();
-          break;
-        case "J":
-          this.processED();
-          break;
-        case "K":
-          this.processEL();
-          break;
-        case "m":
-          this.processSGR();
-      }
-      this._controlSequence = "", this._parserState = g2.BufferingOutput;
-    }
-    processCUU() {
-      const e3 = this._controlSequence.match(/^([0-9]*)A$/);
-      e3 && (this._outputLine = Math.max(this._outputLine - k2(e3[1], 1, 1), 0));
-    }
-    processCUD() {
-      const e3 = this._controlSequence.match(/^([0-9]*)B$/);
-      e3 && (this._outputLine = this._outputLine + k2(e3[1], 1, 1));
-    }
-    processCUF() {
-      const e3 = this._controlSequence.match(/^([0-9]*)C$/);
-      e3 && (this._outputColumn = this._outputColumn + k2(e3[1], 1, 1));
-    }
-    processCUB() {
-      const e3 = this._controlSequence.match(/^([0-9]*)D$/);
-      e3 && (this._outputColumn = Math.max(this._outputColumn - k2(e3[1], 1, 1), 0));
-    }
-    processCUP() {
-      const e3 = this._controlSequence.match(/^([0-9]*)(?:;?([0-9]*))H$/);
-      e3 && (this._outputLine = k2(e3[1], 1, 1) - 1, this._outputColumn = k2(e3[2], 1, 1) - 1);
-    }
-    processED() {
-      const e3 = this._controlSequence.match(/^([0-9]*)J$/);
-      if (e3) switch (p2(e3[1], 0)) {
-        case 0:
-          this._outputLines[this._outputLine].clearToEndOfLine(this._outputColumn);
-          for (let e4 = this._outputLine + 1; e4 < this._outputLines.length; e4++) this._outputLines[e4].clearEntireLine();
-          break;
-        case 1:
-          this._outputLines[this._outputLine].clearToBeginningOfLine(this._outputColumn);
-          for (let e4 = 0; e4 < this._outputLine; e4++) this._outputLines[e4].clearEntireLine();
-          break;
-        case 2:
-          for (let e4 = 0; e4 < this._outputLines.length; e4++) this._outputLines[e4].clearEntireLine();
-      }
-    }
-    processEL() {
-      const e3 = this._controlSequence.match(/^([0-9]*)K$/);
-      if (e3) {
-        const t3 = this._outputLines[this._outputLine];
-        switch (p2(e3[1], 0)) {
-          case 0:
-            t3.clearToEndOfLine(this._outputColumn);
-            break;
-          case 1:
-            t3.clearToBeginningOfLine(this._outputColumn);
-            break;
-          case 2:
-            t3.clearEntireLine();
-        }
-      }
-    }
-    processSGR() {
-      const e3 = this._sgrState ? this._sgrState.copy() : new c2(), t3 = this._controlSequence.slice(0, -1).split(";").map((e4) => "" === e4 ? a2.Reset : parseInt(e4, 10));
-      for (let r3 = 0; r3 < t3.length; r3++) {
-        const n3 = () => {
-          if (r3 + 1 !== t3.length) switch (t3[++r3]) {
-            case u2.Color256: {
-              if (r3 + 1 === t3.length) return;
-              const e4 = t3[++r3];
-              switch (e4) {
-                case l2.Black:
-                  return s2.Black;
-                case l2.Red:
-                  return s2.Red;
-                case l2.Green:
-                  return s2.Green;
-                case l2.Yellow:
-                  return s2.Yellow;
-                case l2.Blue:
-                  return s2.Blue;
-                case l2.Magenta:
-                  return s2.Magenta;
-                case l2.Cyan:
-                  return s2.Cyan;
-                case l2.White:
-                  return s2.White;
-                case l2.BrightBlack:
-                  return s2.BrightBlack;
-                case l2.BrightRed:
-                  return s2.BrightRed;
-                case l2.BrightGreen:
-                  return s2.BrightGreen;
-                case l2.BrightYellow:
-                  return s2.BrightYellow;
-                case l2.BrightBlue:
-                  return s2.BrightBlue;
-                case l2.BrightMagenta:
-                  return s2.BrightMagenta;
-                case l2.BrightCyan:
-                  return s2.BrightCyan;
-                case l2.BrightWhite:
-                  return s2.BrightWhite;
-                default:
-                  if (e4 % 1 != 0) return;
-                  if (e4 >= 16 && e4 <= 231) {
-                    let t4 = e4 - 16, r4 = t4 % 6;
-                    t4 = (t4 - r4) / 6;
-                    let n4 = t4 % 6;
-                    t4 = (t4 - n4) / 6;
-                    let o3 = t4;
-                    return r4 = Math.round(255 * r4 / 5), n4 = Math.round(255 * n4 / 5), o3 = Math.round(255 * o3 / 5), "#" + _2(o3) + _2(n4) + _2(r4);
-                  }
-                  if (e4 >= 232 && e4 <= 255) {
-                    const t4 = Math.round((e4 - 232) / 23 * 255), r4 = _2(t4);
-                    return "#" + r4 + r4 + r4;
-                  }
-                  return;
-              }
-            }
-            case u2.ColorRGB: {
-              const e4 = [0, 0, 0];
-              for (let n4 = 0; n4 < 3 && r3 + 1 < t3.length; n4++) e4[n4] = t3[++r3];
-              return "#" + _2(e4[0]) + _2(e4[1]) + _2(e4[2]);
-            }
-          }
-        };
-        switch (t3[r3]) {
-          case a2.Reset:
-            e3.reset();
-            break;
-          case a2.Bold:
-            e3.setStyle(o2.Bold);
-            break;
-          case a2.Dim:
-            e3.setStyle(o2.Dim);
-            break;
-          case a2.Italic:
-            e3.setStyle(o2.Italic);
-            break;
-          case a2.Underlined:
-            e3.setStyle(o2.Underlined, o2.DoubleUnderlined);
-            break;
-          case a2.SlowBlink:
-            e3.setStyle(o2.SlowBlink, o2.RapidBlink);
-            break;
-          case a2.RapidBlink:
-            e3.setStyle(o2.RapidBlink, o2.SlowBlink);
-            break;
-          case a2.Reversed:
-            e3.setReversed(true);
-            break;
-          case a2.Hidden:
-            e3.setStyle(o2.Hidden);
-            break;
-          case a2.CrossedOut:
-            e3.setStyle(o2.CrossedOut);
-            break;
-          case a2.PrimaryFont:
-            e3.setFont();
-            break;
-          case a2.AlternativeFont1:
-            e3.setFont(i.AlternativeFont1);
-            break;
-          case a2.AlternativeFont2:
-            e3.setFont(i.AlternativeFont2);
-            break;
-          case a2.AlternativeFont3:
-            e3.setFont(i.AlternativeFont3);
-            break;
-          case a2.AlternativeFont4:
-            e3.setFont(i.AlternativeFont4);
-            break;
-          case a2.AlternativeFont5:
-            e3.setFont(i.AlternativeFont5);
-            break;
-          case a2.AlternativeFont6:
-            e3.setFont(i.AlternativeFont6);
-            break;
-          case a2.AlternativeFont7:
-            e3.setFont(i.AlternativeFont7);
-            break;
-          case a2.AlternativeFont8:
-            e3.setFont(i.AlternativeFont8);
-            break;
-          case a2.AlternativeFont9:
-            e3.setFont(i.AlternativeFont9);
-            break;
-          case a2.Fraktur:
-            e3.setStyle(o2.Fraktur);
-            break;
-          case a2.DoubleUnderlined:
-            e3.setStyle(o2.DoubleUnderlined, o2.Underlined);
-            break;
-          case a2.NormalIntensity:
-            e3.deleteStyles(o2.Bold, o2.Dim);
-            break;
-          case a2.NotItalicNotFraktur:
-            e3.deleteStyles(o2.Italic, o2.Fraktur);
-            break;
-          case a2.NotUnderlined:
-            e3.deleteStyles(o2.Underlined, o2.DoubleUnderlined);
-            break;
-          case a2.NotBlinking:
-            e3.deleteStyles(o2.SlowBlink, o2.RapidBlink);
-            break;
-          case a2.ProportionalSpacing:
-            break;
-          case a2.NotReversed:
-            e3.setReversed(false);
-            break;
-          case a2.Reveal:
-            e3.deleteStyles(o2.Hidden);
-            break;
-          case a2.NotCrossedOut:
-            e3.deleteStyles(o2.CrossedOut);
-            break;
-          case a2.ForegroundBlack:
-            e3.setForegroundColor(s2.Black);
-            break;
-          case a2.ForegroundRed:
-            e3.setForegroundColor(s2.Red);
-            break;
-          case a2.ForegroundGreen:
-            e3.setForegroundColor(s2.Green);
-            break;
-          case a2.ForegroundYellow:
-            e3.setForegroundColor(s2.Yellow);
-            break;
-          case a2.ForegroundBlue:
-            e3.setForegroundColor(s2.Blue);
-            break;
-          case a2.ForegroundMagenta:
-            e3.setForegroundColor(s2.Magenta);
-            break;
-          case a2.ForegroundCyan:
-            e3.setForegroundColor(s2.Cyan);
-            break;
-          case a2.ForegroundWhite:
-            e3.setForegroundColor(s2.White);
-            break;
-          case a2.SetForeground: {
-            const t4 = n3();
-            t4 && e3.setForegroundColor(t4);
-            break;
-          }
-          case a2.DefaultForeground:
-            e3.setForegroundColor();
-            break;
-          case a2.BackgroundBlack:
-            e3.setBackgroundColor(s2.Black);
-            break;
-          case a2.BackgroundRed:
-            e3.setBackgroundColor(s2.Red);
-            break;
-          case a2.BackgroundGreen:
-            e3.setBackgroundColor(s2.Green);
-            break;
-          case a2.BackgroundYellow:
-            e3.setBackgroundColor(s2.Yellow);
-            break;
-          case a2.BackgroundBlue:
-            e3.setBackgroundColor(s2.Blue);
-            break;
-          case a2.BackgroundMagenta:
-            e3.setBackgroundColor(s2.Magenta);
-            break;
-          case a2.BackgroundCyan:
-            e3.setBackgroundColor(s2.Cyan);
-            break;
-          case a2.BackgroundWhite:
-            e3.setBackgroundColor(s2.White);
-            break;
-          case a2.SetBackground: {
-            const t4 = n3();
-            t4 && e3.setBackgroundColor(t4);
-            break;
-          }
-          case a2.DefaultBackground:
-            e3.setBackgroundColor();
-            break;
-          case a2.ForegroundBrightBlack:
-            e3.setForegroundColor(s2.BrightBlack);
-            break;
-          case a2.ForegroundBrightRed:
-            e3.setForegroundColor(s2.BrightRed);
-            break;
-          case a2.ForegroundBrightGreen:
-            e3.setForegroundColor(s2.BrightGreen);
-            break;
-          case a2.ForegroundBrightYellow:
-            e3.setForegroundColor(s2.BrightYellow);
-            break;
-          case a2.ForegroundBrightBlue:
-            e3.setForegroundColor(s2.BrightBlue);
-            break;
-          case a2.ForegroundBrightMagenta:
-            e3.setForegroundColor(s2.BrightMagenta);
-            break;
-          case a2.ForegroundBrightCyan:
-            e3.setForegroundColor(s2.BrightCyan);
-            break;
-          case a2.ForegroundBrightWhite:
-            e3.setForegroundColor(s2.BrightWhite);
-            break;
-          case a2.BackgroundBrightBlack:
-            e3.setBackgroundColor(s2.BrightBlack);
-            break;
-          case a2.BackgroundBrightRed:
-            e3.setBackgroundColor(s2.BrightRed);
-            break;
-          case a2.BackgroundBrightGreen:
-            e3.setBackgroundColor(s2.BrightGreen);
-            break;
-          case a2.BackgroundBrightYellow:
-            e3.setBackgroundColor(s2.BrightYellow);
-            break;
-          case a2.BackgroundBrightBlue:
-            e3.setBackgroundColor(s2.BrightBlue);
-            break;
-          case a2.BackgroundBrightMagenta:
-            e3.setBackgroundColor(s2.BrightMagenta);
-            break;
-          case a2.BackgroundBrightCyan:
-            e3.setBackgroundColor(s2.BrightCyan);
-            break;
-          case a2.BackgroundBrightWhite:
-            e3.setBackgroundColor(s2.BrightWhite);
-        }
-      }
-      c2.equivalent(e3, this._sgrState) || (this._sgrState = e3);
-    }
-  }
-  t2.ANSIOutput = h2, function(e3) {
-    e3[e3.Reset = 0] = "Reset", e3[e3.Bold = 1] = "Bold", e3[e3.Dim = 2] = "Dim", e3[e3.Italic = 3] = "Italic", e3[e3.Underlined = 4] = "Underlined", e3[e3.SlowBlink = 5] = "SlowBlink", e3[e3.RapidBlink = 6] = "RapidBlink", e3[e3.Reversed = 7] = "Reversed", e3[e3.Hidden = 8] = "Hidden", e3[e3.CrossedOut = 9] = "CrossedOut", e3[e3.PrimaryFont = 10] = "PrimaryFont", e3[e3.AlternativeFont1 = 11] = "AlternativeFont1", e3[e3.AlternativeFont2 = 12] = "AlternativeFont2", e3[e3.AlternativeFont3 = 13] = "AlternativeFont3", e3[e3.AlternativeFont4 = 14] = "AlternativeFont4", e3[e3.AlternativeFont5 = 15] = "AlternativeFont5", e3[e3.AlternativeFont6 = 16] = "AlternativeFont6", e3[e3.AlternativeFont7 = 17] = "AlternativeFont7", e3[e3.AlternativeFont8 = 18] = "AlternativeFont8", e3[e3.AlternativeFont9 = 19] = "AlternativeFont9", e3[e3.Fraktur = 20] = "Fraktur", e3[e3.DoubleUnderlined = 21] = "DoubleUnderlined", e3[e3.NormalIntensity = 22] = "NormalIntensity", e3[e3.NotItalicNotFraktur = 23] = "NotItalicNotFraktur", e3[e3.NotUnderlined = 24] = "NotUnderlined", e3[e3.NotBlinking = 25] = "NotBlinking", e3[e3.ProportionalSpacing = 26] = "ProportionalSpacing", e3[e3.NotReversed = 27] = "NotReversed", e3[e3.Reveal = 28] = "Reveal", e3[e3.NotCrossedOut = 29] = "NotCrossedOut", e3[e3.ForegroundBlack = 30] = "ForegroundBlack", e3[e3.ForegroundRed = 31] = "ForegroundRed", e3[e3.ForegroundGreen = 32] = "ForegroundGreen", e3[e3.ForegroundYellow = 33] = "ForegroundYellow", e3[e3.ForegroundBlue = 34] = "ForegroundBlue", e3[e3.ForegroundMagenta = 35] = "ForegroundMagenta", e3[e3.ForegroundCyan = 36] = "ForegroundCyan", e3[e3.ForegroundWhite = 37] = "ForegroundWhite", e3[e3.SetForeground = 38] = "SetForeground", e3[e3.DefaultForeground = 39] = "DefaultForeground", e3[e3.BackgroundBlack = 40] = "BackgroundBlack", e3[e3.BackgroundRed = 41] = "BackgroundRed", e3[e3.BackgroundGreen = 42] = "BackgroundGreen", e3[e3.BackgroundYellow = 43] = "BackgroundYellow", e3[e3.BackgroundBlue = 44] = "BackgroundBlue", e3[e3.BackgroundMagenta = 45] = "BackgroundMagenta", e3[e3.BackgroundCyan = 46] = "BackgroundCyan", e3[e3.BackgroundWhite = 47] = "BackgroundWhite", e3[e3.SetBackground = 48] = "SetBackground", e3[e3.DefaultBackground = 49] = "DefaultBackground", e3[e3.DisableProportionalSpacing = 50] = "DisableProportionalSpacing", e3[e3.Framed = 51] = "Framed", e3[e3.Encircled = 52] = "Encircled", e3[e3.Overlined = 53] = "Overlined", e3[e3.NotFramedNotEncircled = 54] = "NotFramedNotEncircled", e3[e3.NotOverlined = 55] = "NotOverlined", e3[e3.SetUnderline = 58] = "SetUnderline", e3[e3.DefaultUnderline = 59] = "DefaultUnderline", e3[e3.IdeogramUnderlineOrRightSideLine = 60] = "IdeogramUnderlineOrRightSideLine", e3[e3.IdeogramDoubleUnderlineOrDoubleRightSideLine = 61] = "IdeogramDoubleUnderlineOrDoubleRightSideLine", e3[e3.IdeogramOverlineOrLeftSideLine = 62] = "IdeogramOverlineOrLeftSideLine", e3[e3.IdeogramDoubleOverlineOrDoubleLeftSideLine = 63] = "IdeogramDoubleOverlineOrDoubleLeftSideLine", e3[e3.IdeogramStressMarking = 64] = "IdeogramStressMarking", e3[e3.NoIdeogramAttributes = 65] = "NoIdeogramAttributes", e3[e3.Superscript = 73] = "Superscript", e3[e3.Subscript = 74] = "Subscript", e3[e3.NotSuperscriptNotSubscript = 75] = "NotSuperscriptNotSubscript", e3[e3.ForegroundBrightBlack = 90] = "ForegroundBrightBlack", e3[e3.ForegroundBrightRed = 91] = "ForegroundBrightRed", e3[e3.ForegroundBrightGreen = 92] = "ForegroundBrightGreen", e3[e3.ForegroundBrightYellow = 93] = "ForegroundBrightYellow", e3[e3.ForegroundBrightBlue = 94] = "ForegroundBrightBlue", e3[e3.ForegroundBrightMagenta = 95] = "ForegroundBrightMagenta", e3[e3.ForegroundBrightCyan = 96] = "ForegroundBrightCyan", e3[e3.ForegroundBrightWhite = 97] = "ForegroundBrightWhite", e3[e3.BackgroundBrightBlack = 100] = "BackgroundBrightBlack", e3[e3.BackgroundBrightRed = 101] = "BackgroundBrightRed", e3[e3.BackgroundBrightGreen = 102] = "BackgroundBrightGreen", e3[e3.BackgroundBrightYellow = 103] = "BackgroundBrightYellow", e3[e3.BackgroundBrightBlue = 104] = "BackgroundBrightBlue", e3[e3.BackgroundBrightMagenta = 105] = "BackgroundBrightMagenta", e3[e3.BackgroundBrightCyan = 106] = "BackgroundBrightCyan", e3[e3.BackgroundBrightWhite = 107] = "BackgroundBrightWhite";
-  }(a2 || (a2 = {})), function(e3) {
-    e3[e3.Color256 = 5] = "Color256", e3[e3.ColorRGB = 2] = "ColorRGB";
-  }(u2 || (u2 = {})), function(e3) {
-    e3[e3.Black = 0] = "Black", e3[e3.Red = 1] = "Red", e3[e3.Green = 2] = "Green", e3[e3.Yellow = 3] = "Yellow", e3[e3.Blue = 4] = "Blue", e3[e3.Magenta = 5] = "Magenta", e3[e3.Cyan = 6] = "Cyan", e3[e3.White = 7] = "White", e3[e3.BrightBlack = 8] = "BrightBlack", e3[e3.BrightRed = 9] = "BrightRed", e3[e3.BrightGreen = 10] = "BrightGreen", e3[e3.BrightYellow = 11] = "BrightYellow", e3[e3.BrightBlue = 12] = "BrightBlue", e3[e3.BrightMagenta = 13] = "BrightMagenta", e3[e3.BrightCyan = 14] = "BrightCyan", e3[e3.BrightWhite = 15] = "BrightWhite";
-  }(l2 || (l2 = {})), function(e3) {
-    e3[e3.BufferingOutput = 0] = "BufferingOutput", e3[e3.ControlSequenceStarted = 1] = "ControlSequenceStarted", e3[e3.ParsingControlSequence = 2] = "ParsingControlSequence";
-  }(g2 || (g2 = {}));
-  class c2 {
-    constructor() {
-      __publicField(this, "_styles");
-      __publicField(this, "_foregroundColor");
-      __publicField(this, "_backgroundColor");
-      __publicField(this, "_underlinedColor");
-      __publicField(this, "_reversed");
-      __publicField(this, "_font");
-    }
-    reset() {
-      this._styles = void 0, this._foregroundColor = void 0, this._backgroundColor = void 0, this._underlinedColor = void 0, this._reversed = void 0, this._font = void 0;
-    }
-    copy() {
-      const e3 = new c2();
-      if (this._styles && this._styles.size) {
-        const t3 = /* @__PURE__ */ new Set();
-        this._styles.forEach((e4) => t3.add(e4)), e3._styles = t3;
-      }
-      return e3._foregroundColor = this._foregroundColor, e3._backgroundColor = this._backgroundColor, e3._underlinedColor = this._underlinedColor, e3._reversed = this._reversed, e3._font = this._font, e3;
-    }
-    setStyle(e3, ...t3) {
-      if (this._styles) for (const e4 of t3) this._styles.delete(e4);
-      else this._styles = /* @__PURE__ */ new Set();
-      this._styles.add(e3);
-    }
-    deleteStyles(...e3) {
-      if (this._styles) {
-        for (const t3 of e3) this._styles.delete(t3);
-        this._styles.size || (this._styles = void 0);
-      }
-    }
-    setForegroundColor(e3) {
-      this._reversed ? this._backgroundColor = e3 : this._foregroundColor = e3;
-    }
-    setBackgroundColor(e3) {
-      this._reversed ? this._foregroundColor = e3 : this._backgroundColor = e3;
-    }
-    setReversed(e3) {
-      e3 ? this._reversed || (this._reversed = true, this.reverseForegroundAndBackgroundColors()) : this._reversed && (this._reversed = void 0, this.reverseForegroundAndBackgroundColors());
-    }
-    setFont(e3) {
-      this._font = e3;
-    }
-    static equivalent(e3, t3) {
-      const r3 = (e4, t4) => t4 instanceof Set ? t4.size ? [...t4] : void 0 : t4;
-      return e3 === t3 || JSON.stringify(e3, r3) === JSON.stringify(t3, r3);
-    }
-    get styles() {
-      return this._styles ? [...this._styles] : void 0;
-    }
-    get foregroundColor() {
-      if (this._backgroundColor && !this._foregroundColor) switch (this._backgroundColor) {
-        case s2.Black:
-        case s2.BrightBlack:
-        case s2.Red:
-        case s2.BrightRed:
-          return s2.White;
-        case s2.Green:
-        case s2.BrightGreen:
-        case s2.Yellow:
-        case s2.BrightYellow:
-        case s2.Blue:
-        case s2.BrightBlue:
-        case s2.Magenta:
-        case s2.BrightMagenta:
-        case s2.Cyan:
-        case s2.BrightCyan:
-        case s2.White:
-        case s2.BrightWhite:
-          return s2.Black;
-      }
-      return this._foregroundColor;
-    }
-    get backgroundColor() {
-      return this._backgroundColor;
-    }
-    get underlinedColor() {
-      return this._underlinedColor;
-    }
-    get font() {
-      return this._font;
-    }
-    reverseForegroundAndBackgroundColors() {
-      const e3 = this._foregroundColor;
-      this._foregroundColor = this._backgroundColor, this._backgroundColor = e3;
-    }
-  }
-  class d2 {
-    constructor() {
-      __publicField(this, "_id", n2());
-      __publicField(this, "_outputRuns", []);
-      __publicField(this, "_totalLength", 0);
-    }
-    clearEntireLine() {
-      this._totalLength && (this._outputRuns = [new B2(" ".repeat(this._totalLength))]);
-    }
-    clearToEndOfLine(e3) {
-      if ((e3 = Math.max(e3, 0)) >= this._totalLength) return;
-      if (0 === e3) return void this.clearEntireLine();
-      let t3, r3, n3 = 0;
-      for (let o4 = 0; o4 < this._outputRuns.length; o4++) {
-        const i3 = this._outputRuns[o4];
-        if (e3 < n3 + i3.text.length) {
-          t3 = i3, r3 = o4;
-          break;
-        }
-        n3 += i3.text.length;
-      }
-      if (void 0 === t3 || void 0 === r3) return;
-      const o3 = e3 - n3, i2 = " ".repeat(this._totalLength - e3), s3 = [];
-      if (o3) {
-        const e4 = t3.text.slice(0, o3);
-        s3.push(new B2(e4, t3.sgrState)), s3.push(new B2(i2));
-      } else s3.push(new B2(i2));
-      this.outputRuns.splice(r3, this._outputRuns.length - r3, ...s3);
-    }
-    clearToBeginningOfLine(e3) {
-      if (0 === (e3 = Math.max(e3, 0))) return;
-      if (e3 >= this._totalLength) return void this.clearEntireLine();
-      let t3, r3, n3 = 0;
-      for (let o4 = this._outputRuns.length - 1; o4 >= 0; o4--) {
-        const i3 = this._outputRuns[o4];
-        if (e3 >= n3 - i3.text.length) {
-          t3 = i3, r3 = o4;
-          break;
-        }
-        n3 -= i3.text.length;
-      }
-      if (void 0 === t3 || void 0 === r3) return;
-      const o3 = n3 - e3, i2 = " ".repeat(e3), s3 = [new B2(i2)];
-      if (o3) {
-        const e4 = t3.text.slice(-o3);
-        s3.push(new B2(e4, t3.sgrState));
-      }
-      this.outputRuns.splice(0, this._outputRuns.length - r3, ...s3);
-    }
-    insert(e3, t3, r3) {
-      if (!e3.length) return;
-      if (t3 === this._totalLength) {
-        if (this._totalLength += e3.length, this._outputRuns.length) {
-          const t4 = this._outputRuns[this._outputRuns.length - 1];
-          if (c2.equivalent(t4.sgrState, r3)) return void t4.appendText(e3);
-        }
-        return void this._outputRuns.push(new B2(e3, r3));
-      }
-      if (t3 > this._totalLength) {
-        const n4 = " ".repeat(t3 - this._totalLength);
-        if (this._totalLength += n4.length + e3.length, !r3 && this._outputRuns.length) {
-          const t4 = this._outputRuns[this._outputRuns.length - 1];
-          if (!t4.sgrState) return t4.appendText(n4), void t4.appendText(e3);
-        }
-        r3 ? (this._outputRuns.push(new B2(n4)), this._outputRuns.push(new B2(e3, r3))) : this._outputRuns.push(new B2(n4 + e3));
-      }
-      let n3, o3 = 0;
-      for (let e4 = 0; e4 < this._outputRuns.length; e4++) {
-        const r4 = this._outputRuns[e4];
-        if (t3 < o3 + r4.text.length) {
-          n3 = e4;
-          break;
-        }
-        o3 += r4.text.length;
-      }
-      if (void 0 === n3) return void this._outputRuns.push(new B2(e3, r3));
-      if (t3 + e3.length >= this._totalLength) {
-        const i3 = t3 - o3, s4 = [];
-        if (i3) {
-          const t4 = this._outputRuns[n3], o4 = t4.text.slice(0, i3);
-          c2.equivalent(t4.sgrState, r3) ? s4.push(new B2(o4 + e3, r3)) : (s4.push(new B2(o4, t4.sgrState)), s4.push(new B2(e3, r3)));
-        } else s4.push(new B2(e3, r3));
-        return this.outputRuns.splice(n3, 1, ...s4), void (this._totalLength = o3 + i3 + e3.length);
-      }
-      let i2, s3 = this._totalLength;
-      for (let r4 = this._outputRuns.length - 1; r4 >= 0; r4--) {
-        const n4 = this._outputRuns[r4];
-        if (t3 + e3.length > s3 - n4.text.length) {
-          i2 = r4;
-          break;
-        }
-        s3 -= n4.text.length;
-      }
-      if (void 0 === i2) return void this._outputRuns.push(new B2(e3, r3));
-      const a3 = [], u3 = t3 - o3;
-      if (u3) {
-        const e4 = this._outputRuns[n3], t4 = e4.text.slice(0, u3);
-        a3.push(new B2(t4, e4.sgrState));
-      }
-      a3.push(new B2(e3, r3));
-      const l3 = s3 - (t3 + e3.length);
-      if (l3) {
-        const e4 = this._outputRuns[i2], t4 = e4.text.slice(-l3);
-        a3.push(new B2(t4, e4.sgrState));
-      }
-      this._outputRuns.splice(n3, i2 - n3 + 1, ...a3), this._outputRuns.length > 1 && (this._outputRuns = B2.optimizeOutputRuns(this._outputRuns)), this._totalLength = this._outputRuns.reduce((e4, t4) => e4 + t4.text.length, 0);
-    }
-    get id() {
-      return this._id;
-    }
-    get outputRuns() {
-      return this._outputRuns;
-    }
-  }
-  class B2 {
-    constructor(e3, t3) {
-      __publicField(this, "_id", n2());
-      __publicField(this, "_sgrState");
-      __publicField(this, "_text");
-      this._sgrState = t3, this._text = e3;
-    }
-    get sgrState() {
-      return this._sgrState;
-    }
-    static optimizeOutputRuns(e3) {
-      const t3 = [e3[0]];
-      for (let r3 = 1, n3 = 0; r3 < e3.length; r3++) {
-        const o3 = e3[r3];
-        c2.equivalent(t3[n3].sgrState, o3.sgrState) ? t3[n3]._text += o3.text : t3[++n3] = o3;
-      }
-      return t3;
-    }
-    appendText(e3) {
-      this._text += e3;
-    }
-    get id() {
-      return this._id;
-    }
-    get format() {
-      return this._sgrState;
-    }
-    get text() {
-      return this._text;
-    }
-  }
-  const k2 = (e3, t3, r3) => {
-    const n3 = p2(e3, t3);
-    return Math.max(n3, r3);
-  }, p2 = (e3, t3) => {
-    const r3 = parseInt(e3);
-    return Number.isNaN(r3) ? t3 : r3;
-  }, _2 = (e3) => {
-    const t3 = Math.max(Math.min(255, e3), 0).toString(16);
-    return 2 === t3.length ? t3 : "0" + t3;
-  };
-}(0, r.exports), void 0 !== t && (e.exports = t);
-var n = r.exports;
-const ANSIDisplay = ({ output, style }) => {
-  const ansiOutput = new n.ANSIOutput();
-  ansiOutput.processOutput(output);
-  let firstOutput = false;
-  return m$1`<div class="ansi-display" style=${{ ...style }}>
-    ${ansiOutput.outputLines.map((line2) => {
-    firstOutput = firstOutput || !!line2.outputRuns.length;
-    return m$1`<div class="ansi-display-line">
-        ${!line2.outputRuns.length ? firstOutput ? m$1`<br />` : null : line2.outputRuns.map(
-      (outputRun) => m$1`<${OutputRun}
-                  key=${outputRun.id}
-                  outputRun=${outputRun}
-                />`
-    )}
-      </div>`;
-  })}
-  </div>`;
-};
-const kForeground = 0;
-const kBackground = 1;
-const OutputRun = ({ outputRun }) => {
-  const computeStyles = (styles) => {
-    let cssProperties = {};
-    if (styles) {
-      styles.forEach((style) => {
-        switch (style) {
-          case n.ANSIStyle.Bold:
-            cssProperties = { ...cssProperties, ...{ fontWeight: "bold" } };
-            break;
-          case n.ANSIStyle.Dim:
-            cssProperties = { ...cssProperties, ...{ fontWeight: "lighter" } };
-            break;
-          case n.ANSIStyle.Italic:
-            cssProperties = { ...cssProperties, ...{ fontStyle: "italic" } };
-            break;
-          case n.ANSIStyle.Underlined:
-            cssProperties = {
-              ...cssProperties,
-              ...{
-                textDecorationLine: "underline",
-                textDecorationStyle: "solid"
-              }
-            };
-            break;
-          case n.ANSIStyle.SlowBlink:
-            cssProperties = {
-              ...cssProperties,
-              ...{ animation: "ansi-display-run-blink 1s linear infinite" }
-            };
-            break;
-          case n.ANSIStyle.RapidBlink:
-            cssProperties = {
-              ...cssProperties,
-              ...{ animation: "ansi-display-run-blink 0.5s linear infinite" }
-            };
-            break;
-          case n.ANSIStyle.Hidden:
-            cssProperties = { ...cssProperties, ...{ visibility: "hidden" } };
-            break;
-          case n.ANSIStyle.CrossedOut:
-            cssProperties = {
-              ...cssProperties,
-              ...{
-                textDecorationLine: "line-through",
-                textDecorationStyle: "solid"
-              }
-            };
-            break;
-          case n.ANSIStyle.DoubleUnderlined:
-            cssProperties = {
-              ...cssProperties,
-              ...{
-                textDecorationLine: "underline",
-                textDecorationStyle: "double"
-              }
-            };
-            break;
-        }
-      });
-    }
-    return cssProperties;
-  };
-  const computeForegroundBackgroundColor = (colorType, color) => {
-    switch (color) {
-      case void 0:
-        return {};
-      case n.ANSIColor.Black:
-      case n.ANSIColor.Red:
-      case n.ANSIColor.Green:
-      case n.ANSIColor.Yellow:
-      case n.ANSIColor.Blue:
-      case n.ANSIColor.Magenta:
-      case n.ANSIColor.Cyan:
-      case n.ANSIColor.White:
-      case n.ANSIColor.BrightBlack:
-      case n.ANSIColor.BrightRed:
-      case n.ANSIColor.BrightGreen:
-      case n.ANSIColor.BrightYellow:
-      case n.ANSIColor.BrightBlue:
-      case n.ANSIColor.BrightMagenta:
-      case n.ANSIColor.BrightCyan:
-      case n.ANSIColor.BrightWhite:
-        if (colorType === kForeground) {
-          return { color: `var(--${color})` };
-        } else {
-          return { background: `var(--${color})` };
-        }
-      default:
-        if (colorType === kForeground) {
-          return { color };
-        } else {
-          return { background: color };
-        }
-    }
-  };
-  const computeCSSProperties = (outputRun2) => {
-    return !outputRun2.format ? {} : {
-      ...computeStyles(outputRun2.format.styles),
-      ...computeForegroundBackgroundColor(
-        kForeground,
-        outputRun2.format.foregroundColor
-      ),
-      ...computeForegroundBackgroundColor(
-        kBackground,
-        outputRun2.format.backgroundColor
-      )
-    };
-  };
-  return m$1`<span style=${computeCSSProperties(outputRun)}
-    >${outputRun.text}</span
-  >`;
+    <i class="${icon}" />
+  </button>`;
 };
 const decodeCache = {};
 function getDecodeCache(exclude) {
@@ -5503,7 +2957,7 @@ function encode$1(string, exclude, keepEscaped) {
 }
 encode$1.defaultChars = ";/?:@&=+$,-_.!~*'()#";
 encode$1.componentChars = "-_.!~*'()";
-function format$1(url) {
+function format$2(url) {
   let result = "";
   result += url.protocol || "";
   result += url.slashes ? "//" : "";
@@ -5702,7 +3156,7 @@ const mdurl = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.definePropert
   __proto__: null,
   decode: decode$1,
   encode: encode$1,
-  format: format$1,
+  format: format$2,
   parse: urlParse
 }, Symbol.toStringTag, { value: "Module" }));
 const Any = /[\0-\uD7FF\uE000-\uFFFF]|[\uD800-\uDBFF][\uDC00-\uDFFF]|[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?:[^\uD800-\uDBFF]|^)[\uDC00-\uDFFF]/;
@@ -9653,14 +7107,14 @@ function isFunction(obj) {
 function escapeRE(str) {
   return str.replace(/[.?*+^$[\]\\(){}|-]/g, "\\$&");
 }
-const defaultOptions = {
+const defaultOptions$1 = {
   fuzzyLink: true,
   fuzzyEmail: true,
   fuzzyIP: false
 };
 function isOptionsObj(obj) {
   return Object.keys(obj || {}).reduce(function(acc, k2) {
-    return acc || defaultOptions.hasOwnProperty(k2);
+    return acc || defaultOptions$1.hasOwnProperty(k2);
   }, false);
 }
 const defaultSchemas = {
@@ -9837,7 +7291,7 @@ function LinkifyIt(schemas, options) {
       schemas = {};
     }
   }
-  this.__opts__ = assign({}, defaultOptions, options);
+  this.__opts__ = assign({}, defaultOptions$1, options);
   this.__index__ = -1;
   this.__last_index__ = -1;
   this.__schema__ = "";
@@ -9918,7 +7372,7 @@ LinkifyIt.prototype.testSchemaAt = function testSchemaAt(text2, schema, pos2) {
   }
   return this.__compiled__[schema.toLowerCase()].validate(text2, pos2, this);
 };
-LinkifyIt.prototype.match = function match2(text2) {
+LinkifyIt.prototype.match = function match(text2) {
   const result = [];
   let shift = 0;
   if (this.__index__ >= 0 && this.__text_cache__ === text2) {
@@ -10394,7 +7848,7 @@ function normalizeLink(url) {
       }
     }
   }
-  return encode$1(format$1(parsed));
+  return encode$1(format$2(parsed));
 }
 function normalizeLinkText(url) {
   const parsed = urlParse(url, true);
@@ -10406,7 +7860,7 @@ function normalizeLinkText(url) {
       }
     }
   }
-  return decode$1(format$1(parsed), decode$1.defaultChars + "%");
+  return decode$1(format$2(parsed), decode$1.defaultChars + "%");
 }
 function MarkdownIt(presetName, options) {
   if (!(this instanceof MarkdownIt)) {
@@ -11478,6 +8932,2346 @@ const resolveToolMessage = (toolMessage) => {
     });
   }
 };
+var e, t, r = {
+  exports: {}
+};
+e = r, t = function(e2, t2) {
+  Object.defineProperty(t2, "__esModule", {
+    value: true
+  }), t2.ANSIOutput = t2.ANSIColor = t2.ANSIFont = t2.ANSIStyle = void 0;
+  let r2 = 0;
+  const n2 = () => ("" + ++r2).padStart(16, "0");
+  var o2, i, s2, a2, u2, l2, g2;
+  (function(e3) {
+    e3.Bold = "ansiBold", e3.Dim = "ansiDim", e3.Italic = "ansiItalic", e3.Underlined = "ansiUnderlined", e3.SlowBlink = "ansiSlowBlink", e3.RapidBlink = "ansiRapidBlink", e3.Hidden = "ansiHidden", e3.CrossedOut = "ansiCrossedOut", e3.Fraktur = "ansiFraktur", e3.DoubleUnderlined = "ansiDoubleUnderlined", e3.Framed = "ansiFramed", e3.Encircled = "ansiEncircled", e3.Overlined = "ansiOverlined", e3.Superscript = "ansiSuperscript", e3.Subscript = "ansiSubscript";
+  })(o2 || (t2.ANSIStyle = o2 = {})), function(e3) {
+    e3.AlternativeFont1 = "ansiAlternativeFont1", e3.AlternativeFont2 = "ansiAlternativeFont2", e3.AlternativeFont3 = "ansiAlternativeFont3", e3.AlternativeFont4 = "ansiAlternativeFont4", e3.AlternativeFont5 = "ansiAlternativeFont5", e3.AlternativeFont6 = "ansiAlternativeFont6", e3.AlternativeFont7 = "ansiAlternativeFont7", e3.AlternativeFont8 = "ansiAlternativeFont8", e3.AlternativeFont9 = "ansiAlternativeFont9";
+  }(i || (t2.ANSIFont = i = {})), function(e3) {
+    e3.Black = "ansiBlack", e3.Red = "ansiRed", e3.Green = "ansiGreen", e3.Yellow = "ansiYellow", e3.Blue = "ansiBlue", e3.Magenta = "ansiMagenta", e3.Cyan = "ansiCyan", e3.White = "ansiWhite", e3.BrightBlack = "ansiBrightBlack", e3.BrightRed = "ansiBrightRed", e3.BrightGreen = "ansiBrightGreen", e3.BrightYellow = "ansiBrightYellow", e3.BrightBlue = "ansiBrightBlue", e3.BrightMagenta = "ansiBrightMagenta", e3.BrightCyan = "ansiBrightCyan", e3.BrightWhite = "ansiBrightWhite";
+  }(s2 || (t2.ANSIColor = s2 = {}));
+  class h2 {
+    constructor() {
+      __publicField(this, "_parserState", g2.BufferingOutput);
+      __publicField(this, "_controlSequence", "");
+      __publicField(this, "_sgrState");
+      __publicField(this, "_outputLines", []);
+      __publicField(this, "_outputLine", 0);
+      __publicField(this, "_outputColumn", 0);
+      __publicField(this, "_buffer", "");
+      __publicField(this, "_pendingNewline", false);
+    }
+    get outputLines() {
+      return this.flushBuffer(), this._outputLines;
+    }
+    static processOutput(e3) {
+      const t3 = new h2();
+      return t3.processOutput(e3), t3.outputLines;
+    }
+    processOutput(e3) {
+      for (let t3 = 0; t3 < e3.length; t3++) {
+        this._pendingNewline && (this.flushBuffer(), this._outputLine++, this._outputColumn = 0, this._pendingNewline = false);
+        const r3 = e3.charAt(t3);
+        this._parserState === g2.BufferingOutput ? "\x1B" === r3 ? (this.flushBuffer(), this._parserState = g2.ControlSequenceStarted) : "" === r3 ? (this.flushBuffer(), this._parserState = g2.ParsingControlSequence) : this.processCharacter(r3) : this._parserState === g2.ControlSequenceStarted ? "[" === r3 ? this._parserState = g2.ParsingControlSequence : (this._parserState = g2.BufferingOutput, this.processCharacter(r3)) : this._parserState === g2.ParsingControlSequence && (this._controlSequence += r3, r3.match(/^[A-Za-z]$/) && this.processControlSequence());
+      }
+      this.flushBuffer();
+    }
+    flushBuffer() {
+      for (let e3 = this._outputLines.length; e3 < this._outputLine + 1; e3++) this._outputLines.push(new d2());
+      this._buffer && (this._outputLines[this._outputLine].insert(this._buffer, this._outputColumn, this._sgrState), this._outputColumn += this._buffer.length, this._buffer = "");
+    }
+    processCharacter(e3) {
+      switch (e3) {
+        case "\n":
+          this._pendingNewline = true;
+          break;
+        case "\r":
+          this.flushBuffer(), this._outputColumn = 0;
+          break;
+        default:
+          this._buffer += e3;
+      }
+    }
+    processControlSequence() {
+      switch (this._controlSequence.charAt(this._controlSequence.length - 1)) {
+        case "A":
+          this.processCUU();
+          break;
+        case "B":
+          this.processCUD();
+          break;
+        case "C":
+          this.processCUF();
+          break;
+        case "D":
+          this.processCUB();
+          break;
+        case "H":
+          this.processCUP();
+          break;
+        case "J":
+          this.processED();
+          break;
+        case "K":
+          this.processEL();
+          break;
+        case "m":
+          this.processSGR();
+      }
+      this._controlSequence = "", this._parserState = g2.BufferingOutput;
+    }
+    processCUU() {
+      const e3 = this._controlSequence.match(/^([0-9]*)A$/);
+      e3 && (this._outputLine = Math.max(this._outputLine - k2(e3[1], 1, 1), 0));
+    }
+    processCUD() {
+      const e3 = this._controlSequence.match(/^([0-9]*)B$/);
+      e3 && (this._outputLine = this._outputLine + k2(e3[1], 1, 1));
+    }
+    processCUF() {
+      const e3 = this._controlSequence.match(/^([0-9]*)C$/);
+      e3 && (this._outputColumn = this._outputColumn + k2(e3[1], 1, 1));
+    }
+    processCUB() {
+      const e3 = this._controlSequence.match(/^([0-9]*)D$/);
+      e3 && (this._outputColumn = Math.max(this._outputColumn - k2(e3[1], 1, 1), 0));
+    }
+    processCUP() {
+      const e3 = this._controlSequence.match(/^([0-9]*)(?:;?([0-9]*))H$/);
+      e3 && (this._outputLine = k2(e3[1], 1, 1) - 1, this._outputColumn = k2(e3[2], 1, 1) - 1);
+    }
+    processED() {
+      const e3 = this._controlSequence.match(/^([0-9]*)J$/);
+      if (e3) switch (p2(e3[1], 0)) {
+        case 0:
+          this._outputLines[this._outputLine].clearToEndOfLine(this._outputColumn);
+          for (let e4 = this._outputLine + 1; e4 < this._outputLines.length; e4++) this._outputLines[e4].clearEntireLine();
+          break;
+        case 1:
+          this._outputLines[this._outputLine].clearToBeginningOfLine(this._outputColumn);
+          for (let e4 = 0; e4 < this._outputLine; e4++) this._outputLines[e4].clearEntireLine();
+          break;
+        case 2:
+          for (let e4 = 0; e4 < this._outputLines.length; e4++) this._outputLines[e4].clearEntireLine();
+      }
+    }
+    processEL() {
+      const e3 = this._controlSequence.match(/^([0-9]*)K$/);
+      if (e3) {
+        const t3 = this._outputLines[this._outputLine];
+        switch (p2(e3[1], 0)) {
+          case 0:
+            t3.clearToEndOfLine(this._outputColumn);
+            break;
+          case 1:
+            t3.clearToBeginningOfLine(this._outputColumn);
+            break;
+          case 2:
+            t3.clearEntireLine();
+        }
+      }
+    }
+    processSGR() {
+      const e3 = this._sgrState ? this._sgrState.copy() : new c2(), t3 = this._controlSequence.slice(0, -1).split(";").map((e4) => "" === e4 ? a2.Reset : parseInt(e4, 10));
+      for (let r3 = 0; r3 < t3.length; r3++) {
+        const n3 = () => {
+          if (r3 + 1 !== t3.length) switch (t3[++r3]) {
+            case u2.Color256: {
+              if (r3 + 1 === t3.length) return;
+              const e4 = t3[++r3];
+              switch (e4) {
+                case l2.Black:
+                  return s2.Black;
+                case l2.Red:
+                  return s2.Red;
+                case l2.Green:
+                  return s2.Green;
+                case l2.Yellow:
+                  return s2.Yellow;
+                case l2.Blue:
+                  return s2.Blue;
+                case l2.Magenta:
+                  return s2.Magenta;
+                case l2.Cyan:
+                  return s2.Cyan;
+                case l2.White:
+                  return s2.White;
+                case l2.BrightBlack:
+                  return s2.BrightBlack;
+                case l2.BrightRed:
+                  return s2.BrightRed;
+                case l2.BrightGreen:
+                  return s2.BrightGreen;
+                case l2.BrightYellow:
+                  return s2.BrightYellow;
+                case l2.BrightBlue:
+                  return s2.BrightBlue;
+                case l2.BrightMagenta:
+                  return s2.BrightMagenta;
+                case l2.BrightCyan:
+                  return s2.BrightCyan;
+                case l2.BrightWhite:
+                  return s2.BrightWhite;
+                default:
+                  if (e4 % 1 != 0) return;
+                  if (e4 >= 16 && e4 <= 231) {
+                    let t4 = e4 - 16, r4 = t4 % 6;
+                    t4 = (t4 - r4) / 6;
+                    let n4 = t4 % 6;
+                    t4 = (t4 - n4) / 6;
+                    let o3 = t4;
+                    return r4 = Math.round(255 * r4 / 5), n4 = Math.round(255 * n4 / 5), o3 = Math.round(255 * o3 / 5), "#" + _2(o3) + _2(n4) + _2(r4);
+                  }
+                  if (e4 >= 232 && e4 <= 255) {
+                    const t4 = Math.round((e4 - 232) / 23 * 255), r4 = _2(t4);
+                    return "#" + r4 + r4 + r4;
+                  }
+                  return;
+              }
+            }
+            case u2.ColorRGB: {
+              const e4 = [0, 0, 0];
+              for (let n4 = 0; n4 < 3 && r3 + 1 < t3.length; n4++) e4[n4] = t3[++r3];
+              return "#" + _2(e4[0]) + _2(e4[1]) + _2(e4[2]);
+            }
+          }
+        };
+        switch (t3[r3]) {
+          case a2.Reset:
+            e3.reset();
+            break;
+          case a2.Bold:
+            e3.setStyle(o2.Bold);
+            break;
+          case a2.Dim:
+            e3.setStyle(o2.Dim);
+            break;
+          case a2.Italic:
+            e3.setStyle(o2.Italic);
+            break;
+          case a2.Underlined:
+            e3.setStyle(o2.Underlined, o2.DoubleUnderlined);
+            break;
+          case a2.SlowBlink:
+            e3.setStyle(o2.SlowBlink, o2.RapidBlink);
+            break;
+          case a2.RapidBlink:
+            e3.setStyle(o2.RapidBlink, o2.SlowBlink);
+            break;
+          case a2.Reversed:
+            e3.setReversed(true);
+            break;
+          case a2.Hidden:
+            e3.setStyle(o2.Hidden);
+            break;
+          case a2.CrossedOut:
+            e3.setStyle(o2.CrossedOut);
+            break;
+          case a2.PrimaryFont:
+            e3.setFont();
+            break;
+          case a2.AlternativeFont1:
+            e3.setFont(i.AlternativeFont1);
+            break;
+          case a2.AlternativeFont2:
+            e3.setFont(i.AlternativeFont2);
+            break;
+          case a2.AlternativeFont3:
+            e3.setFont(i.AlternativeFont3);
+            break;
+          case a2.AlternativeFont4:
+            e3.setFont(i.AlternativeFont4);
+            break;
+          case a2.AlternativeFont5:
+            e3.setFont(i.AlternativeFont5);
+            break;
+          case a2.AlternativeFont6:
+            e3.setFont(i.AlternativeFont6);
+            break;
+          case a2.AlternativeFont7:
+            e3.setFont(i.AlternativeFont7);
+            break;
+          case a2.AlternativeFont8:
+            e3.setFont(i.AlternativeFont8);
+            break;
+          case a2.AlternativeFont9:
+            e3.setFont(i.AlternativeFont9);
+            break;
+          case a2.Fraktur:
+            e3.setStyle(o2.Fraktur);
+            break;
+          case a2.DoubleUnderlined:
+            e3.setStyle(o2.DoubleUnderlined, o2.Underlined);
+            break;
+          case a2.NormalIntensity:
+            e3.deleteStyles(o2.Bold, o2.Dim);
+            break;
+          case a2.NotItalicNotFraktur:
+            e3.deleteStyles(o2.Italic, o2.Fraktur);
+            break;
+          case a2.NotUnderlined:
+            e3.deleteStyles(o2.Underlined, o2.DoubleUnderlined);
+            break;
+          case a2.NotBlinking:
+            e3.deleteStyles(o2.SlowBlink, o2.RapidBlink);
+            break;
+          case a2.ProportionalSpacing:
+            break;
+          case a2.NotReversed:
+            e3.setReversed(false);
+            break;
+          case a2.Reveal:
+            e3.deleteStyles(o2.Hidden);
+            break;
+          case a2.NotCrossedOut:
+            e3.deleteStyles(o2.CrossedOut);
+            break;
+          case a2.ForegroundBlack:
+            e3.setForegroundColor(s2.Black);
+            break;
+          case a2.ForegroundRed:
+            e3.setForegroundColor(s2.Red);
+            break;
+          case a2.ForegroundGreen:
+            e3.setForegroundColor(s2.Green);
+            break;
+          case a2.ForegroundYellow:
+            e3.setForegroundColor(s2.Yellow);
+            break;
+          case a2.ForegroundBlue:
+            e3.setForegroundColor(s2.Blue);
+            break;
+          case a2.ForegroundMagenta:
+            e3.setForegroundColor(s2.Magenta);
+            break;
+          case a2.ForegroundCyan:
+            e3.setForegroundColor(s2.Cyan);
+            break;
+          case a2.ForegroundWhite:
+            e3.setForegroundColor(s2.White);
+            break;
+          case a2.SetForeground: {
+            const t4 = n3();
+            t4 && e3.setForegroundColor(t4);
+            break;
+          }
+          case a2.DefaultForeground:
+            e3.setForegroundColor();
+            break;
+          case a2.BackgroundBlack:
+            e3.setBackgroundColor(s2.Black);
+            break;
+          case a2.BackgroundRed:
+            e3.setBackgroundColor(s2.Red);
+            break;
+          case a2.BackgroundGreen:
+            e3.setBackgroundColor(s2.Green);
+            break;
+          case a2.BackgroundYellow:
+            e3.setBackgroundColor(s2.Yellow);
+            break;
+          case a2.BackgroundBlue:
+            e3.setBackgroundColor(s2.Blue);
+            break;
+          case a2.BackgroundMagenta:
+            e3.setBackgroundColor(s2.Magenta);
+            break;
+          case a2.BackgroundCyan:
+            e3.setBackgroundColor(s2.Cyan);
+            break;
+          case a2.BackgroundWhite:
+            e3.setBackgroundColor(s2.White);
+            break;
+          case a2.SetBackground: {
+            const t4 = n3();
+            t4 && e3.setBackgroundColor(t4);
+            break;
+          }
+          case a2.DefaultBackground:
+            e3.setBackgroundColor();
+            break;
+          case a2.ForegroundBrightBlack:
+            e3.setForegroundColor(s2.BrightBlack);
+            break;
+          case a2.ForegroundBrightRed:
+            e3.setForegroundColor(s2.BrightRed);
+            break;
+          case a2.ForegroundBrightGreen:
+            e3.setForegroundColor(s2.BrightGreen);
+            break;
+          case a2.ForegroundBrightYellow:
+            e3.setForegroundColor(s2.BrightYellow);
+            break;
+          case a2.ForegroundBrightBlue:
+            e3.setForegroundColor(s2.BrightBlue);
+            break;
+          case a2.ForegroundBrightMagenta:
+            e3.setForegroundColor(s2.BrightMagenta);
+            break;
+          case a2.ForegroundBrightCyan:
+            e3.setForegroundColor(s2.BrightCyan);
+            break;
+          case a2.ForegroundBrightWhite:
+            e3.setForegroundColor(s2.BrightWhite);
+            break;
+          case a2.BackgroundBrightBlack:
+            e3.setBackgroundColor(s2.BrightBlack);
+            break;
+          case a2.BackgroundBrightRed:
+            e3.setBackgroundColor(s2.BrightRed);
+            break;
+          case a2.BackgroundBrightGreen:
+            e3.setBackgroundColor(s2.BrightGreen);
+            break;
+          case a2.BackgroundBrightYellow:
+            e3.setBackgroundColor(s2.BrightYellow);
+            break;
+          case a2.BackgroundBrightBlue:
+            e3.setBackgroundColor(s2.BrightBlue);
+            break;
+          case a2.BackgroundBrightMagenta:
+            e3.setBackgroundColor(s2.BrightMagenta);
+            break;
+          case a2.BackgroundBrightCyan:
+            e3.setBackgroundColor(s2.BrightCyan);
+            break;
+          case a2.BackgroundBrightWhite:
+            e3.setBackgroundColor(s2.BrightWhite);
+        }
+      }
+      c2.equivalent(e3, this._sgrState) || (this._sgrState = e3);
+    }
+  }
+  t2.ANSIOutput = h2, function(e3) {
+    e3[e3.Reset = 0] = "Reset", e3[e3.Bold = 1] = "Bold", e3[e3.Dim = 2] = "Dim", e3[e3.Italic = 3] = "Italic", e3[e3.Underlined = 4] = "Underlined", e3[e3.SlowBlink = 5] = "SlowBlink", e3[e3.RapidBlink = 6] = "RapidBlink", e3[e3.Reversed = 7] = "Reversed", e3[e3.Hidden = 8] = "Hidden", e3[e3.CrossedOut = 9] = "CrossedOut", e3[e3.PrimaryFont = 10] = "PrimaryFont", e3[e3.AlternativeFont1 = 11] = "AlternativeFont1", e3[e3.AlternativeFont2 = 12] = "AlternativeFont2", e3[e3.AlternativeFont3 = 13] = "AlternativeFont3", e3[e3.AlternativeFont4 = 14] = "AlternativeFont4", e3[e3.AlternativeFont5 = 15] = "AlternativeFont5", e3[e3.AlternativeFont6 = 16] = "AlternativeFont6", e3[e3.AlternativeFont7 = 17] = "AlternativeFont7", e3[e3.AlternativeFont8 = 18] = "AlternativeFont8", e3[e3.AlternativeFont9 = 19] = "AlternativeFont9", e3[e3.Fraktur = 20] = "Fraktur", e3[e3.DoubleUnderlined = 21] = "DoubleUnderlined", e3[e3.NormalIntensity = 22] = "NormalIntensity", e3[e3.NotItalicNotFraktur = 23] = "NotItalicNotFraktur", e3[e3.NotUnderlined = 24] = "NotUnderlined", e3[e3.NotBlinking = 25] = "NotBlinking", e3[e3.ProportionalSpacing = 26] = "ProportionalSpacing", e3[e3.NotReversed = 27] = "NotReversed", e3[e3.Reveal = 28] = "Reveal", e3[e3.NotCrossedOut = 29] = "NotCrossedOut", e3[e3.ForegroundBlack = 30] = "ForegroundBlack", e3[e3.ForegroundRed = 31] = "ForegroundRed", e3[e3.ForegroundGreen = 32] = "ForegroundGreen", e3[e3.ForegroundYellow = 33] = "ForegroundYellow", e3[e3.ForegroundBlue = 34] = "ForegroundBlue", e3[e3.ForegroundMagenta = 35] = "ForegroundMagenta", e3[e3.ForegroundCyan = 36] = "ForegroundCyan", e3[e3.ForegroundWhite = 37] = "ForegroundWhite", e3[e3.SetForeground = 38] = "SetForeground", e3[e3.DefaultForeground = 39] = "DefaultForeground", e3[e3.BackgroundBlack = 40] = "BackgroundBlack", e3[e3.BackgroundRed = 41] = "BackgroundRed", e3[e3.BackgroundGreen = 42] = "BackgroundGreen", e3[e3.BackgroundYellow = 43] = "BackgroundYellow", e3[e3.BackgroundBlue = 44] = "BackgroundBlue", e3[e3.BackgroundMagenta = 45] = "BackgroundMagenta", e3[e3.BackgroundCyan = 46] = "BackgroundCyan", e3[e3.BackgroundWhite = 47] = "BackgroundWhite", e3[e3.SetBackground = 48] = "SetBackground", e3[e3.DefaultBackground = 49] = "DefaultBackground", e3[e3.DisableProportionalSpacing = 50] = "DisableProportionalSpacing", e3[e3.Framed = 51] = "Framed", e3[e3.Encircled = 52] = "Encircled", e3[e3.Overlined = 53] = "Overlined", e3[e3.NotFramedNotEncircled = 54] = "NotFramedNotEncircled", e3[e3.NotOverlined = 55] = "NotOverlined", e3[e3.SetUnderline = 58] = "SetUnderline", e3[e3.DefaultUnderline = 59] = "DefaultUnderline", e3[e3.IdeogramUnderlineOrRightSideLine = 60] = "IdeogramUnderlineOrRightSideLine", e3[e3.IdeogramDoubleUnderlineOrDoubleRightSideLine = 61] = "IdeogramDoubleUnderlineOrDoubleRightSideLine", e3[e3.IdeogramOverlineOrLeftSideLine = 62] = "IdeogramOverlineOrLeftSideLine", e3[e3.IdeogramDoubleOverlineOrDoubleLeftSideLine = 63] = "IdeogramDoubleOverlineOrDoubleLeftSideLine", e3[e3.IdeogramStressMarking = 64] = "IdeogramStressMarking", e3[e3.NoIdeogramAttributes = 65] = "NoIdeogramAttributes", e3[e3.Superscript = 73] = "Superscript", e3[e3.Subscript = 74] = "Subscript", e3[e3.NotSuperscriptNotSubscript = 75] = "NotSuperscriptNotSubscript", e3[e3.ForegroundBrightBlack = 90] = "ForegroundBrightBlack", e3[e3.ForegroundBrightRed = 91] = "ForegroundBrightRed", e3[e3.ForegroundBrightGreen = 92] = "ForegroundBrightGreen", e3[e3.ForegroundBrightYellow = 93] = "ForegroundBrightYellow", e3[e3.ForegroundBrightBlue = 94] = "ForegroundBrightBlue", e3[e3.ForegroundBrightMagenta = 95] = "ForegroundBrightMagenta", e3[e3.ForegroundBrightCyan = 96] = "ForegroundBrightCyan", e3[e3.ForegroundBrightWhite = 97] = "ForegroundBrightWhite", e3[e3.BackgroundBrightBlack = 100] = "BackgroundBrightBlack", e3[e3.BackgroundBrightRed = 101] = "BackgroundBrightRed", e3[e3.BackgroundBrightGreen = 102] = "BackgroundBrightGreen", e3[e3.BackgroundBrightYellow = 103] = "BackgroundBrightYellow", e3[e3.BackgroundBrightBlue = 104] = "BackgroundBrightBlue", e3[e3.BackgroundBrightMagenta = 105] = "BackgroundBrightMagenta", e3[e3.BackgroundBrightCyan = 106] = "BackgroundBrightCyan", e3[e3.BackgroundBrightWhite = 107] = "BackgroundBrightWhite";
+  }(a2 || (a2 = {})), function(e3) {
+    e3[e3.Color256 = 5] = "Color256", e3[e3.ColorRGB = 2] = "ColorRGB";
+  }(u2 || (u2 = {})), function(e3) {
+    e3[e3.Black = 0] = "Black", e3[e3.Red = 1] = "Red", e3[e3.Green = 2] = "Green", e3[e3.Yellow = 3] = "Yellow", e3[e3.Blue = 4] = "Blue", e3[e3.Magenta = 5] = "Magenta", e3[e3.Cyan = 6] = "Cyan", e3[e3.White = 7] = "White", e3[e3.BrightBlack = 8] = "BrightBlack", e3[e3.BrightRed = 9] = "BrightRed", e3[e3.BrightGreen = 10] = "BrightGreen", e3[e3.BrightYellow = 11] = "BrightYellow", e3[e3.BrightBlue = 12] = "BrightBlue", e3[e3.BrightMagenta = 13] = "BrightMagenta", e3[e3.BrightCyan = 14] = "BrightCyan", e3[e3.BrightWhite = 15] = "BrightWhite";
+  }(l2 || (l2 = {})), function(e3) {
+    e3[e3.BufferingOutput = 0] = "BufferingOutput", e3[e3.ControlSequenceStarted = 1] = "ControlSequenceStarted", e3[e3.ParsingControlSequence = 2] = "ParsingControlSequence";
+  }(g2 || (g2 = {}));
+  class c2 {
+    constructor() {
+      __publicField(this, "_styles");
+      __publicField(this, "_foregroundColor");
+      __publicField(this, "_backgroundColor");
+      __publicField(this, "_underlinedColor");
+      __publicField(this, "_reversed");
+      __publicField(this, "_font");
+    }
+    reset() {
+      this._styles = void 0, this._foregroundColor = void 0, this._backgroundColor = void 0, this._underlinedColor = void 0, this._reversed = void 0, this._font = void 0;
+    }
+    copy() {
+      const e3 = new c2();
+      if (this._styles && this._styles.size) {
+        const t3 = /* @__PURE__ */ new Set();
+        this._styles.forEach((e4) => t3.add(e4)), e3._styles = t3;
+      }
+      return e3._foregroundColor = this._foregroundColor, e3._backgroundColor = this._backgroundColor, e3._underlinedColor = this._underlinedColor, e3._reversed = this._reversed, e3._font = this._font, e3;
+    }
+    setStyle(e3, ...t3) {
+      if (this._styles) for (const e4 of t3) this._styles.delete(e4);
+      else this._styles = /* @__PURE__ */ new Set();
+      this._styles.add(e3);
+    }
+    deleteStyles(...e3) {
+      if (this._styles) {
+        for (const t3 of e3) this._styles.delete(t3);
+        this._styles.size || (this._styles = void 0);
+      }
+    }
+    setForegroundColor(e3) {
+      this._reversed ? this._backgroundColor = e3 : this._foregroundColor = e3;
+    }
+    setBackgroundColor(e3) {
+      this._reversed ? this._foregroundColor = e3 : this._backgroundColor = e3;
+    }
+    setReversed(e3) {
+      e3 ? this._reversed || (this._reversed = true, this.reverseForegroundAndBackgroundColors()) : this._reversed && (this._reversed = void 0, this.reverseForegroundAndBackgroundColors());
+    }
+    setFont(e3) {
+      this._font = e3;
+    }
+    static equivalent(e3, t3) {
+      const r3 = (e4, t4) => t4 instanceof Set ? t4.size ? [...t4] : void 0 : t4;
+      return e3 === t3 || JSON.stringify(e3, r3) === JSON.stringify(t3, r3);
+    }
+    get styles() {
+      return this._styles ? [...this._styles] : void 0;
+    }
+    get foregroundColor() {
+      if (this._backgroundColor && !this._foregroundColor) switch (this._backgroundColor) {
+        case s2.Black:
+        case s2.BrightBlack:
+        case s2.Red:
+        case s2.BrightRed:
+          return s2.White;
+        case s2.Green:
+        case s2.BrightGreen:
+        case s2.Yellow:
+        case s2.BrightYellow:
+        case s2.Blue:
+        case s2.BrightBlue:
+        case s2.Magenta:
+        case s2.BrightMagenta:
+        case s2.Cyan:
+        case s2.BrightCyan:
+        case s2.White:
+        case s2.BrightWhite:
+          return s2.Black;
+      }
+      return this._foregroundColor;
+    }
+    get backgroundColor() {
+      return this._backgroundColor;
+    }
+    get underlinedColor() {
+      return this._underlinedColor;
+    }
+    get font() {
+      return this._font;
+    }
+    reverseForegroundAndBackgroundColors() {
+      const e3 = this._foregroundColor;
+      this._foregroundColor = this._backgroundColor, this._backgroundColor = e3;
+    }
+  }
+  class d2 {
+    constructor() {
+      __publicField(this, "_id", n2());
+      __publicField(this, "_outputRuns", []);
+      __publicField(this, "_totalLength", 0);
+    }
+    clearEntireLine() {
+      this._totalLength && (this._outputRuns = [new B2(" ".repeat(this._totalLength))]);
+    }
+    clearToEndOfLine(e3) {
+      if ((e3 = Math.max(e3, 0)) >= this._totalLength) return;
+      if (0 === e3) return void this.clearEntireLine();
+      let t3, r3, n3 = 0;
+      for (let o4 = 0; o4 < this._outputRuns.length; o4++) {
+        const i3 = this._outputRuns[o4];
+        if (e3 < n3 + i3.text.length) {
+          t3 = i3, r3 = o4;
+          break;
+        }
+        n3 += i3.text.length;
+      }
+      if (void 0 === t3 || void 0 === r3) return;
+      const o3 = e3 - n3, i2 = " ".repeat(this._totalLength - e3), s3 = [];
+      if (o3) {
+        const e4 = t3.text.slice(0, o3);
+        s3.push(new B2(e4, t3.sgrState)), s3.push(new B2(i2));
+      } else s3.push(new B2(i2));
+      this.outputRuns.splice(r3, this._outputRuns.length - r3, ...s3);
+    }
+    clearToBeginningOfLine(e3) {
+      if (0 === (e3 = Math.max(e3, 0))) return;
+      if (e3 >= this._totalLength) return void this.clearEntireLine();
+      let t3, r3, n3 = 0;
+      for (let o4 = this._outputRuns.length - 1; o4 >= 0; o4--) {
+        const i3 = this._outputRuns[o4];
+        if (e3 >= n3 - i3.text.length) {
+          t3 = i3, r3 = o4;
+          break;
+        }
+        n3 -= i3.text.length;
+      }
+      if (void 0 === t3 || void 0 === r3) return;
+      const o3 = n3 - e3, i2 = " ".repeat(e3), s3 = [new B2(i2)];
+      if (o3) {
+        const e4 = t3.text.slice(-o3);
+        s3.push(new B2(e4, t3.sgrState));
+      }
+      this.outputRuns.splice(0, this._outputRuns.length - r3, ...s3);
+    }
+    insert(e3, t3, r3) {
+      if (!e3.length) return;
+      if (t3 === this._totalLength) {
+        if (this._totalLength += e3.length, this._outputRuns.length) {
+          const t4 = this._outputRuns[this._outputRuns.length - 1];
+          if (c2.equivalent(t4.sgrState, r3)) return void t4.appendText(e3);
+        }
+        return void this._outputRuns.push(new B2(e3, r3));
+      }
+      if (t3 > this._totalLength) {
+        const n4 = " ".repeat(t3 - this._totalLength);
+        if (this._totalLength += n4.length + e3.length, !r3 && this._outputRuns.length) {
+          const t4 = this._outputRuns[this._outputRuns.length - 1];
+          if (!t4.sgrState) return t4.appendText(n4), void t4.appendText(e3);
+        }
+        r3 ? (this._outputRuns.push(new B2(n4)), this._outputRuns.push(new B2(e3, r3))) : this._outputRuns.push(new B2(n4 + e3));
+      }
+      let n3, o3 = 0;
+      for (let e4 = 0; e4 < this._outputRuns.length; e4++) {
+        const r4 = this._outputRuns[e4];
+        if (t3 < o3 + r4.text.length) {
+          n3 = e4;
+          break;
+        }
+        o3 += r4.text.length;
+      }
+      if (void 0 === n3) return void this._outputRuns.push(new B2(e3, r3));
+      if (t3 + e3.length >= this._totalLength) {
+        const i3 = t3 - o3, s4 = [];
+        if (i3) {
+          const t4 = this._outputRuns[n3], o4 = t4.text.slice(0, i3);
+          c2.equivalent(t4.sgrState, r3) ? s4.push(new B2(o4 + e3, r3)) : (s4.push(new B2(o4, t4.sgrState)), s4.push(new B2(e3, r3)));
+        } else s4.push(new B2(e3, r3));
+        return this.outputRuns.splice(n3, 1, ...s4), void (this._totalLength = o3 + i3 + e3.length);
+      }
+      let i2, s3 = this._totalLength;
+      for (let r4 = this._outputRuns.length - 1; r4 >= 0; r4--) {
+        const n4 = this._outputRuns[r4];
+        if (t3 + e3.length > s3 - n4.text.length) {
+          i2 = r4;
+          break;
+        }
+        s3 -= n4.text.length;
+      }
+      if (void 0 === i2) return void this._outputRuns.push(new B2(e3, r3));
+      const a3 = [], u3 = t3 - o3;
+      if (u3) {
+        const e4 = this._outputRuns[n3], t4 = e4.text.slice(0, u3);
+        a3.push(new B2(t4, e4.sgrState));
+      }
+      a3.push(new B2(e3, r3));
+      const l3 = s3 - (t3 + e3.length);
+      if (l3) {
+        const e4 = this._outputRuns[i2], t4 = e4.text.slice(-l3);
+        a3.push(new B2(t4, e4.sgrState));
+      }
+      this._outputRuns.splice(n3, i2 - n3 + 1, ...a3), this._outputRuns.length > 1 && (this._outputRuns = B2.optimizeOutputRuns(this._outputRuns)), this._totalLength = this._outputRuns.reduce((e4, t4) => e4 + t4.text.length, 0);
+    }
+    get id() {
+      return this._id;
+    }
+    get outputRuns() {
+      return this._outputRuns;
+    }
+  }
+  class B2 {
+    constructor(e3, t3) {
+      __publicField(this, "_id", n2());
+      __publicField(this, "_sgrState");
+      __publicField(this, "_text");
+      this._sgrState = t3, this._text = e3;
+    }
+    get sgrState() {
+      return this._sgrState;
+    }
+    static optimizeOutputRuns(e3) {
+      const t3 = [e3[0]];
+      for (let r3 = 1, n3 = 0; r3 < e3.length; r3++) {
+        const o3 = e3[r3];
+        c2.equivalent(t3[n3].sgrState, o3.sgrState) ? t3[n3]._text += o3.text : t3[++n3] = o3;
+      }
+      return t3;
+    }
+    appendText(e3) {
+      this._text += e3;
+    }
+    get id() {
+      return this._id;
+    }
+    get format() {
+      return this._sgrState;
+    }
+    get text() {
+      return this._text;
+    }
+  }
+  const k2 = (e3, t3, r3) => {
+    const n3 = p2(e3, t3);
+    return Math.max(n3, r3);
+  }, p2 = (e3, t3) => {
+    const r3 = parseInt(e3);
+    return Number.isNaN(r3) ? t3 : r3;
+  }, _2 = (e3) => {
+    const t3 = Math.max(Math.min(255, e3), 0).toString(16);
+    return 2 === t3.length ? t3 : "0" + t3;
+  };
+}(0, r.exports), void 0 !== t && (e.exports = t);
+var n = r.exports;
+const ANSIDisplay = ({ output, style }) => {
+  const ansiOutput = new n.ANSIOutput();
+  ansiOutput.processOutput(output);
+  let firstOutput = false;
+  return m$1`<div class="ansi-display" style=${{ ...style }}>
+    ${ansiOutput.outputLines.map((line2) => {
+    firstOutput = firstOutput || !!line2.outputRuns.length;
+    return m$1`<div class="ansi-display-line">
+        ${!line2.outputRuns.length ? firstOutput ? m$1`<br />` : null : line2.outputRuns.map(
+      (outputRun) => m$1`<${OutputRun}
+                  key=${outputRun.id}
+                  outputRun=${outputRun}
+                />`
+    )}
+      </div>`;
+  })}
+  </div>`;
+};
+const kForeground = 0;
+const kBackground = 1;
+const OutputRun = ({ outputRun }) => {
+  const computeStyles = (styles) => {
+    let cssProperties = {};
+    if (styles) {
+      styles.forEach((style) => {
+        switch (style) {
+          case n.ANSIStyle.Bold:
+            cssProperties = { ...cssProperties, ...{ fontWeight: "bold" } };
+            break;
+          case n.ANSIStyle.Dim:
+            cssProperties = { ...cssProperties, ...{ fontWeight: "lighter" } };
+            break;
+          case n.ANSIStyle.Italic:
+            cssProperties = { ...cssProperties, ...{ fontStyle: "italic" } };
+            break;
+          case n.ANSIStyle.Underlined:
+            cssProperties = {
+              ...cssProperties,
+              ...{
+                textDecorationLine: "underline",
+                textDecorationStyle: "solid"
+              }
+            };
+            break;
+          case n.ANSIStyle.SlowBlink:
+            cssProperties = {
+              ...cssProperties,
+              ...{ animation: "ansi-display-run-blink 1s linear infinite" }
+            };
+            break;
+          case n.ANSIStyle.RapidBlink:
+            cssProperties = {
+              ...cssProperties,
+              ...{ animation: "ansi-display-run-blink 0.5s linear infinite" }
+            };
+            break;
+          case n.ANSIStyle.Hidden:
+            cssProperties = { ...cssProperties, ...{ visibility: "hidden" } };
+            break;
+          case n.ANSIStyle.CrossedOut:
+            cssProperties = {
+              ...cssProperties,
+              ...{
+                textDecorationLine: "line-through",
+                textDecorationStyle: "solid"
+              }
+            };
+            break;
+          case n.ANSIStyle.DoubleUnderlined:
+            cssProperties = {
+              ...cssProperties,
+              ...{
+                textDecorationLine: "underline",
+                textDecorationStyle: "double"
+              }
+            };
+            break;
+        }
+      });
+    }
+    return cssProperties;
+  };
+  const computeForegroundBackgroundColor = (colorType, color) => {
+    switch (color) {
+      case void 0:
+        return {};
+      case n.ANSIColor.Black:
+      case n.ANSIColor.Red:
+      case n.ANSIColor.Green:
+      case n.ANSIColor.Yellow:
+      case n.ANSIColor.Blue:
+      case n.ANSIColor.Magenta:
+      case n.ANSIColor.Cyan:
+      case n.ANSIColor.White:
+      case n.ANSIColor.BrightBlack:
+      case n.ANSIColor.BrightRed:
+      case n.ANSIColor.BrightGreen:
+      case n.ANSIColor.BrightYellow:
+      case n.ANSIColor.BrightBlue:
+      case n.ANSIColor.BrightMagenta:
+      case n.ANSIColor.BrightCyan:
+      case n.ANSIColor.BrightWhite:
+        if (colorType === kForeground) {
+          return { color: `var(--${color})` };
+        } else {
+          return { background: `var(--${color})` };
+        }
+      default:
+        if (colorType === kForeground) {
+          return { color };
+        } else {
+          return { background: color };
+        }
+    }
+  };
+  const computeCSSProperties = (outputRun2) => {
+    return !outputRun2.format ? {} : {
+      ...computeStyles(outputRun2.format.styles),
+      ...computeForegroundBackgroundColor(
+        kForeground,
+        outputRun2.format.foregroundColor
+      ),
+      ...computeForegroundBackgroundColor(
+        kBackground,
+        outputRun2.format.backgroundColor
+      )
+    };
+  };
+  return m$1`<span style=${computeCSSProperties(outputRun)}
+    >${outputRun.text}</span
+  >`;
+};
+const millisecondsInWeek = 6048e5;
+const millisecondsInDay = 864e5;
+const constructFromSymbol = Symbol.for("constructDateFrom");
+function constructFrom(date, value) {
+  if (typeof date === "function") return date(value);
+  if (date && typeof date === "object" && constructFromSymbol in date)
+    return date[constructFromSymbol](value);
+  if (date instanceof Date) return new date.constructor(value);
+  return new Date(value);
+}
+function toDate(argument, context) {
+  return constructFrom(context || argument, argument);
+}
+let defaultOptions = {};
+function getDefaultOptions() {
+  return defaultOptions;
+}
+function startOfWeek(date, options) {
+  var _a2, _b2, _c, _d;
+  const defaultOptions2 = getDefaultOptions();
+  const weekStartsOn = (options == null ? void 0 : options.weekStartsOn) ?? ((_b2 = (_a2 = options == null ? void 0 : options.locale) == null ? void 0 : _a2.options) == null ? void 0 : _b2.weekStartsOn) ?? defaultOptions2.weekStartsOn ?? ((_d = (_c = defaultOptions2.locale) == null ? void 0 : _c.options) == null ? void 0 : _d.weekStartsOn) ?? 0;
+  const _date = toDate(date, options == null ? void 0 : options.in);
+  const day = _date.getDay();
+  const diff2 = (day < weekStartsOn ? 7 : 0) + day - weekStartsOn;
+  _date.setDate(_date.getDate() - diff2);
+  _date.setHours(0, 0, 0, 0);
+  return _date;
+}
+function startOfISOWeek(date, options) {
+  return startOfWeek(date, { ...options, weekStartsOn: 1 });
+}
+function getISOWeekYear(date, options) {
+  const _date = toDate(date, options == null ? void 0 : options.in);
+  const year = _date.getFullYear();
+  const fourthOfJanuaryOfNextYear = constructFrom(_date, 0);
+  fourthOfJanuaryOfNextYear.setFullYear(year + 1, 0, 4);
+  fourthOfJanuaryOfNextYear.setHours(0, 0, 0, 0);
+  const startOfNextYear = startOfISOWeek(fourthOfJanuaryOfNextYear);
+  const fourthOfJanuaryOfThisYear = constructFrom(_date, 0);
+  fourthOfJanuaryOfThisYear.setFullYear(year, 0, 4);
+  fourthOfJanuaryOfThisYear.setHours(0, 0, 0, 0);
+  const startOfThisYear = startOfISOWeek(fourthOfJanuaryOfThisYear);
+  if (_date.getTime() >= startOfNextYear.getTime()) {
+    return year + 1;
+  } else if (_date.getTime() >= startOfThisYear.getTime()) {
+    return year;
+  } else {
+    return year - 1;
+  }
+}
+function getTimezoneOffsetInMilliseconds(date) {
+  const _date = toDate(date);
+  const utcDate = new Date(
+    Date.UTC(
+      _date.getFullYear(),
+      _date.getMonth(),
+      _date.getDate(),
+      _date.getHours(),
+      _date.getMinutes(),
+      _date.getSeconds(),
+      _date.getMilliseconds()
+    )
+  );
+  utcDate.setUTCFullYear(_date.getFullYear());
+  return +date - +utcDate;
+}
+function normalizeDates(context, ...dates) {
+  const normalize3 = constructFrom.bind(
+    null,
+    dates.find((date) => typeof date === "object")
+  );
+  return dates.map(normalize3);
+}
+function startOfDay(date, options) {
+  const _date = toDate(date, options == null ? void 0 : options.in);
+  _date.setHours(0, 0, 0, 0);
+  return _date;
+}
+function differenceInCalendarDays(laterDate, earlierDate, options) {
+  const [laterDate_, earlierDate_] = normalizeDates(
+    options == null ? void 0 : options.in,
+    laterDate,
+    earlierDate
+  );
+  const laterStartOfDay = startOfDay(laterDate_);
+  const earlierStartOfDay = startOfDay(earlierDate_);
+  const laterTimestamp = +laterStartOfDay - getTimezoneOffsetInMilliseconds(laterStartOfDay);
+  const earlierTimestamp = +earlierStartOfDay - getTimezoneOffsetInMilliseconds(earlierStartOfDay);
+  return Math.round((laterTimestamp - earlierTimestamp) / millisecondsInDay);
+}
+function startOfISOWeekYear(date, options) {
+  const year = getISOWeekYear(date, options);
+  const fourthOfJanuary = constructFrom(date, 0);
+  fourthOfJanuary.setFullYear(year, 0, 4);
+  fourthOfJanuary.setHours(0, 0, 0, 0);
+  return startOfISOWeek(fourthOfJanuary);
+}
+function constructNow(date) {
+  return constructFrom(date, Date.now());
+}
+function isSameDay(laterDate, earlierDate, options) {
+  const [dateLeft_, dateRight_] = normalizeDates(
+    options == null ? void 0 : options.in,
+    laterDate,
+    earlierDate
+  );
+  return +startOfDay(dateLeft_) === +startOfDay(dateRight_);
+}
+function isDate(value) {
+  return value instanceof Date || typeof value === "object" && Object.prototype.toString.call(value) === "[object Date]";
+}
+function isValid(date) {
+  return !(!isDate(date) && typeof date !== "number" || isNaN(+toDate(date)));
+}
+function startOfYear(date, options) {
+  const date_ = toDate(date, options == null ? void 0 : options.in);
+  date_.setFullYear(date_.getFullYear(), 0, 1);
+  date_.setHours(0, 0, 0, 0);
+  return date_;
+}
+const formatDistanceLocale = {
+  lessThanXSeconds: {
+    one: "less than a second",
+    other: "less than {{count}} seconds"
+  },
+  xSeconds: {
+    one: "1 second",
+    other: "{{count}} seconds"
+  },
+  halfAMinute: "half a minute",
+  lessThanXMinutes: {
+    one: "less than a minute",
+    other: "less than {{count}} minutes"
+  },
+  xMinutes: {
+    one: "1 minute",
+    other: "{{count}} minutes"
+  },
+  aboutXHours: {
+    one: "about 1 hour",
+    other: "about {{count}} hours"
+  },
+  xHours: {
+    one: "1 hour",
+    other: "{{count}} hours"
+  },
+  xDays: {
+    one: "1 day",
+    other: "{{count}} days"
+  },
+  aboutXWeeks: {
+    one: "about 1 week",
+    other: "about {{count}} weeks"
+  },
+  xWeeks: {
+    one: "1 week",
+    other: "{{count}} weeks"
+  },
+  aboutXMonths: {
+    one: "about 1 month",
+    other: "about {{count}} months"
+  },
+  xMonths: {
+    one: "1 month",
+    other: "{{count}} months"
+  },
+  aboutXYears: {
+    one: "about 1 year",
+    other: "about {{count}} years"
+  },
+  xYears: {
+    one: "1 year",
+    other: "{{count}} years"
+  },
+  overXYears: {
+    one: "over 1 year",
+    other: "over {{count}} years"
+  },
+  almostXYears: {
+    one: "almost 1 year",
+    other: "almost {{count}} years"
+  }
+};
+const formatDistance = (token2, count, options) => {
+  let result;
+  const tokenValue = formatDistanceLocale[token2];
+  if (typeof tokenValue === "string") {
+    result = tokenValue;
+  } else if (count === 1) {
+    result = tokenValue.one;
+  } else {
+    result = tokenValue.other.replace("{{count}}", count.toString());
+  }
+  if (options == null ? void 0 : options.addSuffix) {
+    if (options.comparison && options.comparison > 0) {
+      return "in " + result;
+    } else {
+      return result + " ago";
+    }
+  }
+  return result;
+};
+function buildFormatLongFn(args) {
+  return (options = {}) => {
+    const width = options.width ? String(options.width) : args.defaultWidth;
+    const format2 = args.formats[width] || args.formats[args.defaultWidth];
+    return format2;
+  };
+}
+const dateFormats = {
+  full: "EEEE, MMMM do, y",
+  long: "MMMM do, y",
+  medium: "MMM d, y",
+  short: "MM/dd/yyyy"
+};
+const timeFormats = {
+  full: "h:mm:ss a zzzz",
+  long: "h:mm:ss a z",
+  medium: "h:mm:ss a",
+  short: "h:mm a"
+};
+const dateTimeFormats = {
+  full: "{{date}} 'at' {{time}}",
+  long: "{{date}} 'at' {{time}}",
+  medium: "{{date}}, {{time}}",
+  short: "{{date}}, {{time}}"
+};
+const formatLong = {
+  date: buildFormatLongFn({
+    formats: dateFormats,
+    defaultWidth: "full"
+  }),
+  time: buildFormatLongFn({
+    formats: timeFormats,
+    defaultWidth: "full"
+  }),
+  dateTime: buildFormatLongFn({
+    formats: dateTimeFormats,
+    defaultWidth: "full"
+  })
+};
+const formatRelativeLocale = {
+  lastWeek: "'last' eeee 'at' p",
+  yesterday: "'yesterday at' p",
+  today: "'today at' p",
+  tomorrow: "'tomorrow at' p",
+  nextWeek: "eeee 'at' p",
+  other: "P"
+};
+const formatRelative = (token2, _date, _baseDate, _options) => formatRelativeLocale[token2];
+function buildLocalizeFn(args) {
+  return (value, options) => {
+    const context = (options == null ? void 0 : options.context) ? String(options.context) : "standalone";
+    let valuesArray;
+    if (context === "formatting" && args.formattingValues) {
+      const defaultWidth = args.defaultFormattingWidth || args.defaultWidth;
+      const width = (options == null ? void 0 : options.width) ? String(options.width) : defaultWidth;
+      valuesArray = args.formattingValues[width] || args.formattingValues[defaultWidth];
+    } else {
+      const defaultWidth = args.defaultWidth;
+      const width = (options == null ? void 0 : options.width) ? String(options.width) : args.defaultWidth;
+      valuesArray = args.values[width] || args.values[defaultWidth];
+    }
+    const index = args.argumentCallback ? args.argumentCallback(value) : value;
+    return valuesArray[index];
+  };
+}
+const eraValues = {
+  narrow: ["B", "A"],
+  abbreviated: ["BC", "AD"],
+  wide: ["Before Christ", "Anno Domini"]
+};
+const quarterValues = {
+  narrow: ["1", "2", "3", "4"],
+  abbreviated: ["Q1", "Q2", "Q3", "Q4"],
+  wide: ["1st quarter", "2nd quarter", "3rd quarter", "4th quarter"]
+};
+const monthValues = {
+  narrow: ["J", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D"],
+  abbreviated: [
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec"
+  ],
+  wide: [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December"
+  ]
+};
+const dayValues = {
+  narrow: ["S", "M", "T", "W", "T", "F", "S"],
+  short: ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"],
+  abbreviated: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
+  wide: [
+    "Sunday",
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday"
+  ]
+};
+const dayPeriodValues = {
+  narrow: {
+    am: "a",
+    pm: "p",
+    midnight: "mi",
+    noon: "n",
+    morning: "morning",
+    afternoon: "afternoon",
+    evening: "evening",
+    night: "night"
+  },
+  abbreviated: {
+    am: "AM",
+    pm: "PM",
+    midnight: "midnight",
+    noon: "noon",
+    morning: "morning",
+    afternoon: "afternoon",
+    evening: "evening",
+    night: "night"
+  },
+  wide: {
+    am: "a.m.",
+    pm: "p.m.",
+    midnight: "midnight",
+    noon: "noon",
+    morning: "morning",
+    afternoon: "afternoon",
+    evening: "evening",
+    night: "night"
+  }
+};
+const formattingDayPeriodValues = {
+  narrow: {
+    am: "a",
+    pm: "p",
+    midnight: "mi",
+    noon: "n",
+    morning: "in the morning",
+    afternoon: "in the afternoon",
+    evening: "in the evening",
+    night: "at night"
+  },
+  abbreviated: {
+    am: "AM",
+    pm: "PM",
+    midnight: "midnight",
+    noon: "noon",
+    morning: "in the morning",
+    afternoon: "in the afternoon",
+    evening: "in the evening",
+    night: "at night"
+  },
+  wide: {
+    am: "a.m.",
+    pm: "p.m.",
+    midnight: "midnight",
+    noon: "noon",
+    morning: "in the morning",
+    afternoon: "in the afternoon",
+    evening: "in the evening",
+    night: "at night"
+  }
+};
+const ordinalNumber = (dirtyNumber, _options) => {
+  const number = Number(dirtyNumber);
+  const rem100 = number % 100;
+  if (rem100 > 20 || rem100 < 10) {
+    switch (rem100 % 10) {
+      case 1:
+        return number + "st";
+      case 2:
+        return number + "nd";
+      case 3:
+        return number + "rd";
+    }
+  }
+  return number + "th";
+};
+const localize = {
+  ordinalNumber,
+  era: buildLocalizeFn({
+    values: eraValues,
+    defaultWidth: "wide"
+  }),
+  quarter: buildLocalizeFn({
+    values: quarterValues,
+    defaultWidth: "wide",
+    argumentCallback: (quarter) => quarter - 1
+  }),
+  month: buildLocalizeFn({
+    values: monthValues,
+    defaultWidth: "wide"
+  }),
+  day: buildLocalizeFn({
+    values: dayValues,
+    defaultWidth: "wide"
+  }),
+  dayPeriod: buildLocalizeFn({
+    values: dayPeriodValues,
+    defaultWidth: "wide",
+    formattingValues: formattingDayPeriodValues,
+    defaultFormattingWidth: "wide"
+  })
+};
+function buildMatchFn(args) {
+  return (string, options = {}) => {
+    const width = options.width;
+    const matchPattern = width && args.matchPatterns[width] || args.matchPatterns[args.defaultMatchWidth];
+    const matchResult = string.match(matchPattern);
+    if (!matchResult) {
+      return null;
+    }
+    const matchedString = matchResult[0];
+    const parsePatterns = width && args.parsePatterns[width] || args.parsePatterns[args.defaultParseWidth];
+    const key2 = Array.isArray(parsePatterns) ? findIndex(parsePatterns, (pattern) => pattern.test(matchedString)) : (
+      // [TODO] -- I challenge you to fix the type
+      findKey(parsePatterns, (pattern) => pattern.test(matchedString))
+    );
+    let value;
+    value = args.valueCallback ? args.valueCallback(key2) : key2;
+    value = options.valueCallback ? (
+      // [TODO] -- I challenge you to fix the type
+      options.valueCallback(value)
+    ) : value;
+    const rest = string.slice(matchedString.length);
+    return { value, rest };
+  };
+}
+function findKey(object, predicate) {
+  for (const key2 in object) {
+    if (Object.prototype.hasOwnProperty.call(object, key2) && predicate(object[key2])) {
+      return key2;
+    }
+  }
+  return void 0;
+}
+function findIndex(array, predicate) {
+  for (let key2 = 0; key2 < array.length; key2++) {
+    if (predicate(array[key2])) {
+      return key2;
+    }
+  }
+  return void 0;
+}
+function buildMatchPatternFn(args) {
+  return (string, options = {}) => {
+    const matchResult = string.match(args.matchPattern);
+    if (!matchResult) return null;
+    const matchedString = matchResult[0];
+    const parseResult = string.match(args.parsePattern);
+    if (!parseResult) return null;
+    let value = args.valueCallback ? args.valueCallback(parseResult[0]) : parseResult[0];
+    value = options.valueCallback ? options.valueCallback(value) : value;
+    const rest = string.slice(matchedString.length);
+    return { value, rest };
+  };
+}
+const matchOrdinalNumberPattern = /^(\d+)(th|st|nd|rd)?/i;
+const parseOrdinalNumberPattern = /\d+/i;
+const matchEraPatterns = {
+  narrow: /^(b|a)/i,
+  abbreviated: /^(b\.?\s?c\.?|b\.?\s?c\.?\s?e\.?|a\.?\s?d\.?|c\.?\s?e\.?)/i,
+  wide: /^(before christ|before common era|anno domini|common era)/i
+};
+const parseEraPatterns = {
+  any: [/^b/i, /^(a|c)/i]
+};
+const matchQuarterPatterns = {
+  narrow: /^[1234]/i,
+  abbreviated: /^q[1234]/i,
+  wide: /^[1234](th|st|nd|rd)? quarter/i
+};
+const parseQuarterPatterns = {
+  any: [/1/i, /2/i, /3/i, /4/i]
+};
+const matchMonthPatterns = {
+  narrow: /^[jfmasond]/i,
+  abbreviated: /^(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)/i,
+  wide: /^(january|february|march|april|may|june|july|august|september|october|november|december)/i
+};
+const parseMonthPatterns = {
+  narrow: [
+    /^j/i,
+    /^f/i,
+    /^m/i,
+    /^a/i,
+    /^m/i,
+    /^j/i,
+    /^j/i,
+    /^a/i,
+    /^s/i,
+    /^o/i,
+    /^n/i,
+    /^d/i
+  ],
+  any: [
+    /^ja/i,
+    /^f/i,
+    /^mar/i,
+    /^ap/i,
+    /^may/i,
+    /^jun/i,
+    /^jul/i,
+    /^au/i,
+    /^s/i,
+    /^o/i,
+    /^n/i,
+    /^d/i
+  ]
+};
+const matchDayPatterns = {
+  narrow: /^[smtwf]/i,
+  short: /^(su|mo|tu|we|th|fr|sa)/i,
+  abbreviated: /^(sun|mon|tue|wed|thu|fri|sat)/i,
+  wide: /^(sunday|monday|tuesday|wednesday|thursday|friday|saturday)/i
+};
+const parseDayPatterns = {
+  narrow: [/^s/i, /^m/i, /^t/i, /^w/i, /^t/i, /^f/i, /^s/i],
+  any: [/^su/i, /^m/i, /^tu/i, /^w/i, /^th/i, /^f/i, /^sa/i]
+};
+const matchDayPeriodPatterns = {
+  narrow: /^(a|p|mi|n|(in the|at) (morning|afternoon|evening|night))/i,
+  any: /^([ap]\.?\s?m\.?|midnight|noon|(in the|at) (morning|afternoon|evening|night))/i
+};
+const parseDayPeriodPatterns = {
+  any: {
+    am: /^a/i,
+    pm: /^p/i,
+    midnight: /^mi/i,
+    noon: /^no/i,
+    morning: /morning/i,
+    afternoon: /afternoon/i,
+    evening: /evening/i,
+    night: /night/i
+  }
+};
+const match2 = {
+  ordinalNumber: buildMatchPatternFn({
+    matchPattern: matchOrdinalNumberPattern,
+    parsePattern: parseOrdinalNumberPattern,
+    valueCallback: (value) => parseInt(value, 10)
+  }),
+  era: buildMatchFn({
+    matchPatterns: matchEraPatterns,
+    defaultMatchWidth: "wide",
+    parsePatterns: parseEraPatterns,
+    defaultParseWidth: "any"
+  }),
+  quarter: buildMatchFn({
+    matchPatterns: matchQuarterPatterns,
+    defaultMatchWidth: "wide",
+    parsePatterns: parseQuarterPatterns,
+    defaultParseWidth: "any",
+    valueCallback: (index) => index + 1
+  }),
+  month: buildMatchFn({
+    matchPatterns: matchMonthPatterns,
+    defaultMatchWidth: "wide",
+    parsePatterns: parseMonthPatterns,
+    defaultParseWidth: "any"
+  }),
+  day: buildMatchFn({
+    matchPatterns: matchDayPatterns,
+    defaultMatchWidth: "wide",
+    parsePatterns: parseDayPatterns,
+    defaultParseWidth: "any"
+  }),
+  dayPeriod: buildMatchFn({
+    matchPatterns: matchDayPeriodPatterns,
+    defaultMatchWidth: "any",
+    parsePatterns: parseDayPeriodPatterns,
+    defaultParseWidth: "any"
+  })
+};
+const enUS = {
+  code: "en-US",
+  formatDistance,
+  formatLong,
+  formatRelative,
+  localize,
+  match: match2,
+  options: {
+    weekStartsOn: 0,
+    firstWeekContainsDate: 1
+  }
+};
+function getDayOfYear(date, options) {
+  const _date = toDate(date, options == null ? void 0 : options.in);
+  const diff2 = differenceInCalendarDays(_date, startOfYear(_date));
+  const dayOfYear = diff2 + 1;
+  return dayOfYear;
+}
+function getISOWeek(date, options) {
+  const _date = toDate(date, options == null ? void 0 : options.in);
+  const diff2 = +startOfISOWeek(_date) - +startOfISOWeekYear(_date);
+  return Math.round(diff2 / millisecondsInWeek) + 1;
+}
+function getWeekYear(date, options) {
+  var _a2, _b2, _c, _d;
+  const _date = toDate(date, options == null ? void 0 : options.in);
+  const year = _date.getFullYear();
+  const defaultOptions2 = getDefaultOptions();
+  const firstWeekContainsDate = (options == null ? void 0 : options.firstWeekContainsDate) ?? ((_b2 = (_a2 = options == null ? void 0 : options.locale) == null ? void 0 : _a2.options) == null ? void 0 : _b2.firstWeekContainsDate) ?? defaultOptions2.firstWeekContainsDate ?? ((_d = (_c = defaultOptions2.locale) == null ? void 0 : _c.options) == null ? void 0 : _d.firstWeekContainsDate) ?? 1;
+  const firstWeekOfNextYear = constructFrom((options == null ? void 0 : options.in) || date, 0);
+  firstWeekOfNextYear.setFullYear(year + 1, 0, firstWeekContainsDate);
+  firstWeekOfNextYear.setHours(0, 0, 0, 0);
+  const startOfNextYear = startOfWeek(firstWeekOfNextYear, options);
+  const firstWeekOfThisYear = constructFrom((options == null ? void 0 : options.in) || date, 0);
+  firstWeekOfThisYear.setFullYear(year, 0, firstWeekContainsDate);
+  firstWeekOfThisYear.setHours(0, 0, 0, 0);
+  const startOfThisYear = startOfWeek(firstWeekOfThisYear, options);
+  if (+_date >= +startOfNextYear) {
+    return year + 1;
+  } else if (+_date >= +startOfThisYear) {
+    return year;
+  } else {
+    return year - 1;
+  }
+}
+function startOfWeekYear(date, options) {
+  var _a2, _b2, _c, _d;
+  const defaultOptions2 = getDefaultOptions();
+  const firstWeekContainsDate = (options == null ? void 0 : options.firstWeekContainsDate) ?? ((_b2 = (_a2 = options == null ? void 0 : options.locale) == null ? void 0 : _a2.options) == null ? void 0 : _b2.firstWeekContainsDate) ?? defaultOptions2.firstWeekContainsDate ?? ((_d = (_c = defaultOptions2.locale) == null ? void 0 : _c.options) == null ? void 0 : _d.firstWeekContainsDate) ?? 1;
+  const year = getWeekYear(date, options);
+  const firstWeek = constructFrom((options == null ? void 0 : options.in) || date, 0);
+  firstWeek.setFullYear(year, 0, firstWeekContainsDate);
+  firstWeek.setHours(0, 0, 0, 0);
+  const _date = startOfWeek(firstWeek, options);
+  return _date;
+}
+function getWeek(date, options) {
+  const _date = toDate(date, options == null ? void 0 : options.in);
+  const diff2 = +startOfWeek(_date, options) - +startOfWeekYear(_date, options);
+  return Math.round(diff2 / millisecondsInWeek) + 1;
+}
+function addLeadingZeros(number, targetLength) {
+  const sign2 = number < 0 ? "-" : "";
+  const output = Math.abs(number).toString().padStart(targetLength, "0");
+  return sign2 + output;
+}
+const lightFormatters = {
+  // Year
+  y(date, token2) {
+    const signedYear = date.getFullYear();
+    const year = signedYear > 0 ? signedYear : 1 - signedYear;
+    return addLeadingZeros(token2 === "yy" ? year % 100 : year, token2.length);
+  },
+  // Month
+  M(date, token2) {
+    const month = date.getMonth();
+    return token2 === "M" ? String(month + 1) : addLeadingZeros(month + 1, 2);
+  },
+  // Day of the month
+  d(date, token2) {
+    return addLeadingZeros(date.getDate(), token2.length);
+  },
+  // AM or PM
+  a(date, token2) {
+    const dayPeriodEnumValue = date.getHours() / 12 >= 1 ? "pm" : "am";
+    switch (token2) {
+      case "a":
+      case "aa":
+        return dayPeriodEnumValue.toUpperCase();
+      case "aaa":
+        return dayPeriodEnumValue;
+      case "aaaaa":
+        return dayPeriodEnumValue[0];
+      case "aaaa":
+      default:
+        return dayPeriodEnumValue === "am" ? "a.m." : "p.m.";
+    }
+  },
+  // Hour [1-12]
+  h(date, token2) {
+    return addLeadingZeros(date.getHours() % 12 || 12, token2.length);
+  },
+  // Hour [0-23]
+  H(date, token2) {
+    return addLeadingZeros(date.getHours(), token2.length);
+  },
+  // Minute
+  m(date, token2) {
+    return addLeadingZeros(date.getMinutes(), token2.length);
+  },
+  // Second
+  s(date, token2) {
+    return addLeadingZeros(date.getSeconds(), token2.length);
+  },
+  // Fraction of second
+  S(date, token2) {
+    const numberOfDigits = token2.length;
+    const milliseconds = date.getMilliseconds();
+    const fractionalSeconds = Math.trunc(
+      milliseconds * Math.pow(10, numberOfDigits - 3)
+    );
+    return addLeadingZeros(fractionalSeconds, token2.length);
+  }
+};
+const dayPeriodEnum = {
+  am: "am",
+  pm: "pm",
+  midnight: "midnight",
+  noon: "noon",
+  morning: "morning",
+  afternoon: "afternoon",
+  evening: "evening",
+  night: "night"
+};
+const formatters = {
+  // Era
+  G: function(date, token2, localize2) {
+    const era = date.getFullYear() > 0 ? 1 : 0;
+    switch (token2) {
+      case "G":
+      case "GG":
+      case "GGG":
+        return localize2.era(era, { width: "abbreviated" });
+      case "GGGGG":
+        return localize2.era(era, { width: "narrow" });
+      case "GGGG":
+      default:
+        return localize2.era(era, { width: "wide" });
+    }
+  },
+  // Year
+  y: function(date, token2, localize2) {
+    if (token2 === "yo") {
+      const signedYear = date.getFullYear();
+      const year = signedYear > 0 ? signedYear : 1 - signedYear;
+      return localize2.ordinalNumber(year, { unit: "year" });
+    }
+    return lightFormatters.y(date, token2);
+  },
+  // Local week-numbering year
+  Y: function(date, token2, localize2, options) {
+    const signedWeekYear = getWeekYear(date, options);
+    const weekYear = signedWeekYear > 0 ? signedWeekYear : 1 - signedWeekYear;
+    if (token2 === "YY") {
+      const twoDigitYear = weekYear % 100;
+      return addLeadingZeros(twoDigitYear, 2);
+    }
+    if (token2 === "Yo") {
+      return localize2.ordinalNumber(weekYear, { unit: "year" });
+    }
+    return addLeadingZeros(weekYear, token2.length);
+  },
+  // ISO week-numbering year
+  R: function(date, token2) {
+    const isoWeekYear = getISOWeekYear(date);
+    return addLeadingZeros(isoWeekYear, token2.length);
+  },
+  // Extended year. This is a single number designating the year of this calendar system.
+  // The main difference between `y` and `u` localizers are B.C. years:
+  // | Year | `y` | `u` |
+  // |------|-----|-----|
+  // | AC 1 |   1 |   1 |
+  // | BC 1 |   1 |   0 |
+  // | BC 2 |   2 |  -1 |
+  // Also `yy` always returns the last two digits of a year,
+  // while `uu` pads single digit years to 2 characters and returns other years unchanged.
+  u: function(date, token2) {
+    const year = date.getFullYear();
+    return addLeadingZeros(year, token2.length);
+  },
+  // Quarter
+  Q: function(date, token2, localize2) {
+    const quarter = Math.ceil((date.getMonth() + 1) / 3);
+    switch (token2) {
+      case "Q":
+        return String(quarter);
+      case "QQ":
+        return addLeadingZeros(quarter, 2);
+      case "Qo":
+        return localize2.ordinalNumber(quarter, { unit: "quarter" });
+      case "QQQ":
+        return localize2.quarter(quarter, {
+          width: "abbreviated",
+          context: "formatting"
+        });
+      case "QQQQQ":
+        return localize2.quarter(quarter, {
+          width: "narrow",
+          context: "formatting"
+        });
+      case "QQQQ":
+      default:
+        return localize2.quarter(quarter, {
+          width: "wide",
+          context: "formatting"
+        });
+    }
+  },
+  // Stand-alone quarter
+  q: function(date, token2, localize2) {
+    const quarter = Math.ceil((date.getMonth() + 1) / 3);
+    switch (token2) {
+      case "q":
+        return String(quarter);
+      case "qq":
+        return addLeadingZeros(quarter, 2);
+      case "qo":
+        return localize2.ordinalNumber(quarter, { unit: "quarter" });
+      case "qqq":
+        return localize2.quarter(quarter, {
+          width: "abbreviated",
+          context: "standalone"
+        });
+      case "qqqqq":
+        return localize2.quarter(quarter, {
+          width: "narrow",
+          context: "standalone"
+        });
+      case "qqqq":
+      default:
+        return localize2.quarter(quarter, {
+          width: "wide",
+          context: "standalone"
+        });
+    }
+  },
+  // Month
+  M: function(date, token2, localize2) {
+    const month = date.getMonth();
+    switch (token2) {
+      case "M":
+      case "MM":
+        return lightFormatters.M(date, token2);
+      case "Mo":
+        return localize2.ordinalNumber(month + 1, { unit: "month" });
+      case "MMM":
+        return localize2.month(month, {
+          width: "abbreviated",
+          context: "formatting"
+        });
+      case "MMMMM":
+        return localize2.month(month, {
+          width: "narrow",
+          context: "formatting"
+        });
+      case "MMMM":
+      default:
+        return localize2.month(month, { width: "wide", context: "formatting" });
+    }
+  },
+  // Stand-alone month
+  L: function(date, token2, localize2) {
+    const month = date.getMonth();
+    switch (token2) {
+      case "L":
+        return String(month + 1);
+      case "LL":
+        return addLeadingZeros(month + 1, 2);
+      case "Lo":
+        return localize2.ordinalNumber(month + 1, { unit: "month" });
+      case "LLL":
+        return localize2.month(month, {
+          width: "abbreviated",
+          context: "standalone"
+        });
+      case "LLLLL":
+        return localize2.month(month, {
+          width: "narrow",
+          context: "standalone"
+        });
+      case "LLLL":
+      default:
+        return localize2.month(month, { width: "wide", context: "standalone" });
+    }
+  },
+  // Local week of year
+  w: function(date, token2, localize2, options) {
+    const week = getWeek(date, options);
+    if (token2 === "wo") {
+      return localize2.ordinalNumber(week, { unit: "week" });
+    }
+    return addLeadingZeros(week, token2.length);
+  },
+  // ISO week of year
+  I: function(date, token2, localize2) {
+    const isoWeek = getISOWeek(date);
+    if (token2 === "Io") {
+      return localize2.ordinalNumber(isoWeek, { unit: "week" });
+    }
+    return addLeadingZeros(isoWeek, token2.length);
+  },
+  // Day of the month
+  d: function(date, token2, localize2) {
+    if (token2 === "do") {
+      return localize2.ordinalNumber(date.getDate(), { unit: "date" });
+    }
+    return lightFormatters.d(date, token2);
+  },
+  // Day of year
+  D: function(date, token2, localize2) {
+    const dayOfYear = getDayOfYear(date);
+    if (token2 === "Do") {
+      return localize2.ordinalNumber(dayOfYear, { unit: "dayOfYear" });
+    }
+    return addLeadingZeros(dayOfYear, token2.length);
+  },
+  // Day of week
+  E: function(date, token2, localize2) {
+    const dayOfWeek = date.getDay();
+    switch (token2) {
+      case "E":
+      case "EE":
+      case "EEE":
+        return localize2.day(dayOfWeek, {
+          width: "abbreviated",
+          context: "formatting"
+        });
+      case "EEEEE":
+        return localize2.day(dayOfWeek, {
+          width: "narrow",
+          context: "formatting"
+        });
+      case "EEEEEE":
+        return localize2.day(dayOfWeek, {
+          width: "short",
+          context: "formatting"
+        });
+      case "EEEE":
+      default:
+        return localize2.day(dayOfWeek, {
+          width: "wide",
+          context: "formatting"
+        });
+    }
+  },
+  // Local day of week
+  e: function(date, token2, localize2, options) {
+    const dayOfWeek = date.getDay();
+    const localDayOfWeek = (dayOfWeek - options.weekStartsOn + 8) % 7 || 7;
+    switch (token2) {
+      case "e":
+        return String(localDayOfWeek);
+      case "ee":
+        return addLeadingZeros(localDayOfWeek, 2);
+      case "eo":
+        return localize2.ordinalNumber(localDayOfWeek, { unit: "day" });
+      case "eee":
+        return localize2.day(dayOfWeek, {
+          width: "abbreviated",
+          context: "formatting"
+        });
+      case "eeeee":
+        return localize2.day(dayOfWeek, {
+          width: "narrow",
+          context: "formatting"
+        });
+      case "eeeeee":
+        return localize2.day(dayOfWeek, {
+          width: "short",
+          context: "formatting"
+        });
+      case "eeee":
+      default:
+        return localize2.day(dayOfWeek, {
+          width: "wide",
+          context: "formatting"
+        });
+    }
+  },
+  // Stand-alone local day of week
+  c: function(date, token2, localize2, options) {
+    const dayOfWeek = date.getDay();
+    const localDayOfWeek = (dayOfWeek - options.weekStartsOn + 8) % 7 || 7;
+    switch (token2) {
+      case "c":
+        return String(localDayOfWeek);
+      case "cc":
+        return addLeadingZeros(localDayOfWeek, token2.length);
+      case "co":
+        return localize2.ordinalNumber(localDayOfWeek, { unit: "day" });
+      case "ccc":
+        return localize2.day(dayOfWeek, {
+          width: "abbreviated",
+          context: "standalone"
+        });
+      case "ccccc":
+        return localize2.day(dayOfWeek, {
+          width: "narrow",
+          context: "standalone"
+        });
+      case "cccccc":
+        return localize2.day(dayOfWeek, {
+          width: "short",
+          context: "standalone"
+        });
+      case "cccc":
+      default:
+        return localize2.day(dayOfWeek, {
+          width: "wide",
+          context: "standalone"
+        });
+    }
+  },
+  // ISO day of week
+  i: function(date, token2, localize2) {
+    const dayOfWeek = date.getDay();
+    const isoDayOfWeek = dayOfWeek === 0 ? 7 : dayOfWeek;
+    switch (token2) {
+      case "i":
+        return String(isoDayOfWeek);
+      case "ii":
+        return addLeadingZeros(isoDayOfWeek, token2.length);
+      case "io":
+        return localize2.ordinalNumber(isoDayOfWeek, { unit: "day" });
+      case "iii":
+        return localize2.day(dayOfWeek, {
+          width: "abbreviated",
+          context: "formatting"
+        });
+      case "iiiii":
+        return localize2.day(dayOfWeek, {
+          width: "narrow",
+          context: "formatting"
+        });
+      case "iiiiii":
+        return localize2.day(dayOfWeek, {
+          width: "short",
+          context: "formatting"
+        });
+      case "iiii":
+      default:
+        return localize2.day(dayOfWeek, {
+          width: "wide",
+          context: "formatting"
+        });
+    }
+  },
+  // AM or PM
+  a: function(date, token2, localize2) {
+    const hours = date.getHours();
+    const dayPeriodEnumValue = hours / 12 >= 1 ? "pm" : "am";
+    switch (token2) {
+      case "a":
+      case "aa":
+        return localize2.dayPeriod(dayPeriodEnumValue, {
+          width: "abbreviated",
+          context: "formatting"
+        });
+      case "aaa":
+        return localize2.dayPeriod(dayPeriodEnumValue, {
+          width: "abbreviated",
+          context: "formatting"
+        }).toLowerCase();
+      case "aaaaa":
+        return localize2.dayPeriod(dayPeriodEnumValue, {
+          width: "narrow",
+          context: "formatting"
+        });
+      case "aaaa":
+      default:
+        return localize2.dayPeriod(dayPeriodEnumValue, {
+          width: "wide",
+          context: "formatting"
+        });
+    }
+  },
+  // AM, PM, midnight, noon
+  b: function(date, token2, localize2) {
+    const hours = date.getHours();
+    let dayPeriodEnumValue;
+    if (hours === 12) {
+      dayPeriodEnumValue = dayPeriodEnum.noon;
+    } else if (hours === 0) {
+      dayPeriodEnumValue = dayPeriodEnum.midnight;
+    } else {
+      dayPeriodEnumValue = hours / 12 >= 1 ? "pm" : "am";
+    }
+    switch (token2) {
+      case "b":
+      case "bb":
+        return localize2.dayPeriod(dayPeriodEnumValue, {
+          width: "abbreviated",
+          context: "formatting"
+        });
+      case "bbb":
+        return localize2.dayPeriod(dayPeriodEnumValue, {
+          width: "abbreviated",
+          context: "formatting"
+        }).toLowerCase();
+      case "bbbbb":
+        return localize2.dayPeriod(dayPeriodEnumValue, {
+          width: "narrow",
+          context: "formatting"
+        });
+      case "bbbb":
+      default:
+        return localize2.dayPeriod(dayPeriodEnumValue, {
+          width: "wide",
+          context: "formatting"
+        });
+    }
+  },
+  // in the morning, in the afternoon, in the evening, at night
+  B: function(date, token2, localize2) {
+    const hours = date.getHours();
+    let dayPeriodEnumValue;
+    if (hours >= 17) {
+      dayPeriodEnumValue = dayPeriodEnum.evening;
+    } else if (hours >= 12) {
+      dayPeriodEnumValue = dayPeriodEnum.afternoon;
+    } else if (hours >= 4) {
+      dayPeriodEnumValue = dayPeriodEnum.morning;
+    } else {
+      dayPeriodEnumValue = dayPeriodEnum.night;
+    }
+    switch (token2) {
+      case "B":
+      case "BB":
+      case "BBB":
+        return localize2.dayPeriod(dayPeriodEnumValue, {
+          width: "abbreviated",
+          context: "formatting"
+        });
+      case "BBBBB":
+        return localize2.dayPeriod(dayPeriodEnumValue, {
+          width: "narrow",
+          context: "formatting"
+        });
+      case "BBBB":
+      default:
+        return localize2.dayPeriod(dayPeriodEnumValue, {
+          width: "wide",
+          context: "formatting"
+        });
+    }
+  },
+  // Hour [1-12]
+  h: function(date, token2, localize2) {
+    if (token2 === "ho") {
+      let hours = date.getHours() % 12;
+      if (hours === 0) hours = 12;
+      return localize2.ordinalNumber(hours, { unit: "hour" });
+    }
+    return lightFormatters.h(date, token2);
+  },
+  // Hour [0-23]
+  H: function(date, token2, localize2) {
+    if (token2 === "Ho") {
+      return localize2.ordinalNumber(date.getHours(), { unit: "hour" });
+    }
+    return lightFormatters.H(date, token2);
+  },
+  // Hour [0-11]
+  K: function(date, token2, localize2) {
+    const hours = date.getHours() % 12;
+    if (token2 === "Ko") {
+      return localize2.ordinalNumber(hours, { unit: "hour" });
+    }
+    return addLeadingZeros(hours, token2.length);
+  },
+  // Hour [1-24]
+  k: function(date, token2, localize2) {
+    let hours = date.getHours();
+    if (hours === 0) hours = 24;
+    if (token2 === "ko") {
+      return localize2.ordinalNumber(hours, { unit: "hour" });
+    }
+    return addLeadingZeros(hours, token2.length);
+  },
+  // Minute
+  m: function(date, token2, localize2) {
+    if (token2 === "mo") {
+      return localize2.ordinalNumber(date.getMinutes(), { unit: "minute" });
+    }
+    return lightFormatters.m(date, token2);
+  },
+  // Second
+  s: function(date, token2, localize2) {
+    if (token2 === "so") {
+      return localize2.ordinalNumber(date.getSeconds(), { unit: "second" });
+    }
+    return lightFormatters.s(date, token2);
+  },
+  // Fraction of second
+  S: function(date, token2) {
+    return lightFormatters.S(date, token2);
+  },
+  // Timezone (ISO-8601. If offset is 0, output is always `'Z'`)
+  X: function(date, token2, _localize) {
+    const timezoneOffset = date.getTimezoneOffset();
+    if (timezoneOffset === 0) {
+      return "Z";
+    }
+    switch (token2) {
+      case "X":
+        return formatTimezoneWithOptionalMinutes(timezoneOffset);
+      case "XXXX":
+      case "XX":
+        return formatTimezone(timezoneOffset);
+      case "XXXXX":
+      case "XXX":
+      default:
+        return formatTimezone(timezoneOffset, ":");
+    }
+  },
+  // Timezone (ISO-8601. If offset is 0, output is `'+00:00'` or equivalent)
+  x: function(date, token2, _localize) {
+    const timezoneOffset = date.getTimezoneOffset();
+    switch (token2) {
+      case "x":
+        return formatTimezoneWithOptionalMinutes(timezoneOffset);
+      case "xxxx":
+      case "xx":
+        return formatTimezone(timezoneOffset);
+      case "xxxxx":
+      case "xxx":
+      default:
+        return formatTimezone(timezoneOffset, ":");
+    }
+  },
+  // Timezone (GMT)
+  O: function(date, token2, _localize) {
+    const timezoneOffset = date.getTimezoneOffset();
+    switch (token2) {
+      case "O":
+      case "OO":
+      case "OOO":
+        return "GMT" + formatTimezoneShort(timezoneOffset, ":");
+      case "OOOO":
+      default:
+        return "GMT" + formatTimezone(timezoneOffset, ":");
+    }
+  },
+  // Timezone (specific non-location)
+  z: function(date, token2, _localize) {
+    const timezoneOffset = date.getTimezoneOffset();
+    switch (token2) {
+      case "z":
+      case "zz":
+      case "zzz":
+        return "GMT" + formatTimezoneShort(timezoneOffset, ":");
+      case "zzzz":
+      default:
+        return "GMT" + formatTimezone(timezoneOffset, ":");
+    }
+  },
+  // Seconds timestamp
+  t: function(date, token2, _localize) {
+    const timestamp = Math.trunc(+date / 1e3);
+    return addLeadingZeros(timestamp, token2.length);
+  },
+  // Milliseconds timestamp
+  T: function(date, token2, _localize) {
+    return addLeadingZeros(+date, token2.length);
+  }
+};
+function formatTimezoneShort(offset, delimiter2 = "") {
+  const sign2 = offset > 0 ? "-" : "+";
+  const absOffset = Math.abs(offset);
+  const hours = Math.trunc(absOffset / 60);
+  const minutes = absOffset % 60;
+  if (minutes === 0) {
+    return sign2 + String(hours);
+  }
+  return sign2 + String(hours) + delimiter2 + addLeadingZeros(minutes, 2);
+}
+function formatTimezoneWithOptionalMinutes(offset, delimiter2) {
+  if (offset % 60 === 0) {
+    const sign2 = offset > 0 ? "-" : "+";
+    return sign2 + addLeadingZeros(Math.abs(offset) / 60, 2);
+  }
+  return formatTimezone(offset, delimiter2);
+}
+function formatTimezone(offset, delimiter2 = "") {
+  const sign2 = offset > 0 ? "-" : "+";
+  const absOffset = Math.abs(offset);
+  const hours = addLeadingZeros(Math.trunc(absOffset / 60), 2);
+  const minutes = addLeadingZeros(absOffset % 60, 2);
+  return sign2 + hours + delimiter2 + minutes;
+}
+const dateLongFormatter = (pattern, formatLong2) => {
+  switch (pattern) {
+    case "P":
+      return formatLong2.date({ width: "short" });
+    case "PP":
+      return formatLong2.date({ width: "medium" });
+    case "PPP":
+      return formatLong2.date({ width: "long" });
+    case "PPPP":
+    default:
+      return formatLong2.date({ width: "full" });
+  }
+};
+const timeLongFormatter = (pattern, formatLong2) => {
+  switch (pattern) {
+    case "p":
+      return formatLong2.time({ width: "short" });
+    case "pp":
+      return formatLong2.time({ width: "medium" });
+    case "ppp":
+      return formatLong2.time({ width: "long" });
+    case "pppp":
+    default:
+      return formatLong2.time({ width: "full" });
+  }
+};
+const dateTimeLongFormatter = (pattern, formatLong2) => {
+  const matchResult = pattern.match(/(P+)(p+)?/) || [];
+  const datePattern = matchResult[1];
+  const timePattern = matchResult[2];
+  if (!timePattern) {
+    return dateLongFormatter(pattern, formatLong2);
+  }
+  let dateTimeFormat;
+  switch (datePattern) {
+    case "P":
+      dateTimeFormat = formatLong2.dateTime({ width: "short" });
+      break;
+    case "PP":
+      dateTimeFormat = formatLong2.dateTime({ width: "medium" });
+      break;
+    case "PPP":
+      dateTimeFormat = formatLong2.dateTime({ width: "long" });
+      break;
+    case "PPPP":
+    default:
+      dateTimeFormat = formatLong2.dateTime({ width: "full" });
+      break;
+  }
+  return dateTimeFormat.replace("{{date}}", dateLongFormatter(datePattern, formatLong2)).replace("{{time}}", timeLongFormatter(timePattern, formatLong2));
+};
+const longFormatters = {
+  p: timeLongFormatter,
+  P: dateTimeLongFormatter
+};
+const dayOfYearTokenRE = /^D+$/;
+const weekYearTokenRE = /^Y+$/;
+const throwTokens = ["D", "DD", "YY", "YYYY"];
+function isProtectedDayOfYearToken(token2) {
+  return dayOfYearTokenRE.test(token2);
+}
+function isProtectedWeekYearToken(token2) {
+  return weekYearTokenRE.test(token2);
+}
+function warnOrThrowProtectedError(token2, format2, input) {
+  const _message = message(token2, format2, input);
+  console.warn(_message);
+  if (throwTokens.includes(token2)) throw new RangeError(_message);
+}
+function message(token2, format2, input) {
+  const subject = token2[0] === "Y" ? "years" : "days of the month";
+  return `Use \`${token2.toLowerCase()}\` instead of \`${token2}\` (in \`${format2}\`) for formatting ${subject} to the input \`${input}\`; see: https://github.com/date-fns/date-fns/blob/master/docs/unicodeTokens.md`;
+}
+const formattingTokensRegExp = /[yYQqMLwIdDecihHKkms]o|(\w)\1*|''|'(''|[^'])+('|$)|./g;
+const longFormattingTokensRegExp = /P+p+|P+|p+|''|'(''|[^'])+('|$)|./g;
+const escapedStringRegExp = /^'([^]*?)'?$/;
+const doubleQuoteRegExp = /''/g;
+const unescapedLatinCharacterRegExp = /[a-zA-Z]/;
+function format$1(date, formatStr, options) {
+  var _a2, _b2, _c, _d;
+  const defaultOptions2 = getDefaultOptions();
+  const locale = defaultOptions2.locale ?? enUS;
+  const firstWeekContainsDate = defaultOptions2.firstWeekContainsDate ?? ((_b2 = (_a2 = defaultOptions2.locale) == null ? void 0 : _a2.options) == null ? void 0 : _b2.firstWeekContainsDate) ?? 1;
+  const weekStartsOn = defaultOptions2.weekStartsOn ?? ((_d = (_c = defaultOptions2.locale) == null ? void 0 : _c.options) == null ? void 0 : _d.weekStartsOn) ?? 0;
+  const originalDate = toDate(date, options == null ? void 0 : options.in);
+  if (!isValid(originalDate)) {
+    throw new RangeError("Invalid time value");
+  }
+  let parts = formatStr.match(longFormattingTokensRegExp).map((substring) => {
+    const firstCharacter = substring[0];
+    if (firstCharacter === "p" || firstCharacter === "P") {
+      const longFormatter = longFormatters[firstCharacter];
+      return longFormatter(substring, locale.formatLong);
+    }
+    return substring;
+  }).join("").match(formattingTokensRegExp).map((substring) => {
+    if (substring === "''") {
+      return { isToken: false, value: "'" };
+    }
+    const firstCharacter = substring[0];
+    if (firstCharacter === "'") {
+      return { isToken: false, value: cleanEscapedString(substring) };
+    }
+    if (formatters[firstCharacter]) {
+      return { isToken: true, value: substring };
+    }
+    if (firstCharacter.match(unescapedLatinCharacterRegExp)) {
+      throw new RangeError(
+        "Format string contains an unescaped latin alphabet character `" + firstCharacter + "`"
+      );
+    }
+    return { isToken: false, value: substring };
+  });
+  if (locale.localize.preprocessor) {
+    parts = locale.localize.preprocessor(originalDate, parts);
+  }
+  const formatterOptions = {
+    firstWeekContainsDate,
+    weekStartsOn,
+    locale
+  };
+  return parts.map((part) => {
+    if (!part.isToken) return part.value;
+    const token2 = part.value;
+    if (isProtectedWeekYearToken(token2) || isProtectedDayOfYearToken(token2)) {
+      warnOrThrowProtectedError(token2, formatStr, String(date));
+    }
+    const formatter = formatters[token2[0]];
+    return formatter(originalDate, token2, locale.localize, formatterOptions);
+  }).join("");
+}
+function cleanEscapedString(input) {
+  const matched = input.match(escapedStringRegExp);
+  if (!matched) {
+    return input;
+  }
+  return matched[1].replace(doubleQuoteRegExp, "'");
+}
+function isSameYear(laterDate, earlierDate, options) {
+  const [laterDate_, earlierDate_] = normalizeDates(
+    options == null ? void 0 : options.in,
+    laterDate,
+    earlierDate
+  );
+  return laterDate_.getFullYear() === earlierDate_.getFullYear();
+}
+function isThisYear(date, options) {
+  return isSameYear(
+    constructFrom(date, date),
+    constructNow(date)
+  );
+}
+function isToday(date, options) {
+  return isSameDay(
+    constructFrom(date, date),
+    constructNow(date)
+  );
+}
+const arrayToString = (val) => {
+  val = Array.isArray(val) ? val : [val];
+  return val.join(", ");
+};
+const inputString = (input) => {
+  if (typeof input === "string") {
+    return [input];
+  } else {
+    return input.map((inp) => {
+      if (typeof inp === "string") {
+        return inp;
+      } else {
+        const content = inp.content;
+        if (typeof content === "string") {
+          return content;
+        } else {
+          const result = content.map((con) => {
+            if (con.type === "text") {
+              return con.text;
+            } else {
+              return "";
+            }
+          });
+          return result.join("\n");
+        }
+      }
+    });
+  }
+};
+const formatDataset = (name, samples, epochs) => {
+  const perEpochSamples = epochs > 0 ? samples / epochs : samples;
+  return `${name ? "— " : ""}${perEpochSamples + " "}${epochs > 1 ? `x ${epochs} ` : ""}${samples === 1 ? "sample" : "samples"}`;
+};
+const formatTime = (seconds) => {
+  if (seconds < 60) {
+    return `${seconds} sec`;
+  } else if (seconds < 60 * 60) {
+    return `${Math.floor(seconds / 60)} min ${seconds % 60} sec`;
+  } else {
+    return `${Math.floor(seconds / (60 * 60 * 24))} days ${Math.floor(
+      seconds / 60
+    )} min ${seconds % 60} sec`;
+  }
+};
+function formatPrettyDecimal(num) {
+  const numDecimalPlaces = num.toString().includes(".") ? num.toString().split(".")[1].length : 0;
+  if (numDecimalPlaces === 0) {
+    return num.toFixed(1);
+  } else if (numDecimalPlaces > 3) {
+    return num.toFixed(3);
+  } else {
+    return num.toString();
+  }
+}
+function formatDecimalNoTrailingZeroes(num) {
+  if (typeof num !== "number") {
+    return num;
+  }
+  if (num.toString().includes(".")) {
+    const decimal = num.toString().split(".")[1];
+    const trimmed = decimal.replace(/\.?0+$/, "");
+    return num.toFixed(trimmed.length);
+  } else {
+    return num.toFixed(0);
+  }
+}
+function toTitleCase(str) {
+  return str.split(" ").map((w2) => w2[0].toUpperCase() + w2.substr(1).toLowerCase()).join(" ");
+}
+function formatNoDecimal(num) {
+  if (typeof num !== "number") {
+    return num;
+  }
+  const rounded = Math.round(num);
+  return rounded.toFixed(0);
+}
+function formatNumber(num) {
+  return num.toLocaleString(navigator.language, {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 5
+  });
+}
+function formatPrettyDateTime(date) {
+  if (isToday(date)) {
+    return `Today, ${format$1(date, "h:mmaaa")}`;
+  }
+  if (isThisYear(date)) {
+    return format$1(date, "MMM d, h:mmaaa");
+  }
+  return format$1(date, "MMM d yyyy, h:mmaaa");
+}
 const RenderedContent = ({
   id,
   entry,
@@ -11785,506 +11579,135 @@ const MetaDataView = ({
     </tbody>
   </table>`;
 };
-const kPlanCardBodyId = "task-plan-card-body";
-const PlanCard = ({ evalSpec, evalPlan, scores, context }) => {
-  return m$1`
-    <${Card}>
-      <${CardHeader} icon=${ApplicationIcons.config} label="Config"/>
-      <${CardBody} id="${kPlanCardBodyId}" style=${{
-    paddingTop: "0",
-    paddingBottom: "0"
-  }}>
-      
-        <${PlanDetailView}
-          evaluation=${evalSpec}
-          plan=${evalPlan}
-          scores=${scores}
-          context=${context}
-        />
-      </${CardBody}>
-    </${Card}>
-  `;
-};
-const planItemStyle = {
-  fontSize: FontSize.base,
-  marginBottom: "0em"
-};
-const planSepStyle = {
-  marginLeft: ".3em",
-  marginRight: ".3em",
-  marginTop: "em",
-  marginBottom: "-0.1em"
-};
-const ScorerDetailView = ({ name, scores, params, context }) => {
-  if (scores.length > 1) {
-    params["scores"] = scores;
+const TabSet = ({ id, type, classes, tools, styles, children }) => {
+  if (!id) {
+    throw new Error("Tabsets require an id to function properly");
   }
-  return m$1`<${DetailStep}
-    icon=${ApplicationIcons.scorer}
-    name=${name}
-    params=${params}
-    context=${context}
-    style=${planItemStyle}
-  />`;
+  const tabs = children;
+  const tabType = type || "tabs";
+  const tabSetStyle = {
+    alignItems: "space-between"
+  };
+  return m$1`<ul
+      ...${{ id }}
+      class="nav nav-${tabType} ${classes ? classes : ""}"
+      role="tablist"
+      aria-orientation="horizontal"
+      style=${{ ...tabSetStyle, ...styles.tabSet }}
+    >
+      <${Tabs} tabs=${tabs} type=${tabType} style=${styles.tabs} />
+      <${TabTools} tools=${tools} />
+    </ul>
+    <${TabPanels} id=${id} tabs=${tabs} style=${styles.tabBody} />`;
 };
-const DatasetDetailView = ({ dataset, context, style }) => {
-  const filtered = Object.fromEntries(
-    Object.entries(dataset).filter(([key2]) => key2 !== "sample_ids")
-  );
-  if (!dataset || Object.keys(filtered).length === 0) {
-    return m$1`<span style=${{ ...planItemStyle, ...style }}
-      >No dataset information available</span
-    >`;
-  }
-  return m$1`<${MetaDataView}
-    entries="${filtered}"
-    tableOptions="borderless,sm"
-    context=${context}
-    style=${{ ...planItemStyle, ...style }}
-  />`;
-};
-const SolversDetailView = ({ steps, context }) => {
-  const separator = m$1` <div style=${{ ...planItemStyle, ...planSepStyle }}>
-    <i class="${ApplicationIcons.arrows.right}"></i>
-  </div>`;
-  const details = steps == null ? void 0 : steps.map((step, index) => {
-    return m$1`
-      <${DetailStep}
-        name=${step.solver}
-        context=${context}
-        style=${planItemStyle}
-      />
-      ${index < steps.length - 1 ? separator : ""}
-    `;
-  });
+const TabPanel = ({
+  id,
+  index,
+  selected,
+  style,
+  scrollable,
+  classes,
+  children
+}) => {
+  const tabContentsId = computeTabContentsId(id, index);
   return m$1`<div
+    id="${tabContentsId}"
+    class="tab-pane show${selected ? " active" : ""}${classes ? ` ${classes}` : ""}"
     style=${{
-    display: "flex",
-    flexDirection: "columns"
+    flex: "1",
+    overflowY: scrollable === void 0 || scrollable ? "auto" : "hidden",
+    ...style
   }}
   >
-    ${details}
+    ${children}
   </div>`;
 };
-const DetailStep = ({ icon, name, params, style, context }) => {
-  const iconHtml = icon ? m$1`<i class="${icon}" style=${{ marginRight: ".3em" }}></i>` : "";
-  return m$1`
-    <div style=${style}>
-      ${iconHtml} ${name}
-      <div
-        style=${{
-    marginLeft: "1.3rem",
-    marginTop: "0.2rem",
-    marginBottom: "0.3rem"
-  }}
-      >
-        ${m$1`<${MetaDataView}
-          entries="${params}"
-          context=${context}
-          style=${{ fontSize: FontSize.small }}
-        />`}
-      </div>
-    </div>
-  `;
-};
-const PlanDetailView = ({ evaluation, plan, context, scores }) => {
-  if (!evaluation) {
-    return "";
-  }
-  const config2 = (evaluation == null ? void 0 : evaluation.config) || {};
-  const steps = plan == null ? void 0 : plan.steps;
-  const metadata = evaluation == null ? void 0 : evaluation.metadata;
-  const revision = evaluation == null ? void 0 : evaluation.revision;
-  const packages = evaluation == null ? void 0 : evaluation.packages;
-  const model_args = evaluation == null ? void 0 : evaluation.model_args;
-  const task_args = evaluation == null ? void 0 : evaluation.task_args;
-  const generate_config = plan == null ? void 0 : plan.config;
-  const taskInformation = {
-    ["Task ID"]: evaluation == null ? void 0 : evaluation.task_id,
-    ["Run ID"]: evaluation == null ? void 0 : evaluation.run_id
-  };
-  if (revision) {
-    taskInformation[`${revision.type ? `${toTitleCase(revision.type)} ` : ""}Revision`] = {
-      _html: m$1`<a href="${ghCommitUrl(revision.origin, revision.commit)}"
-        >${revision.commit}</a
-      >`
-    };
-  }
-  if (packages) {
-    taskInformation["Inspect"] = {
-      _html: m$1`${Object.keys(packages).map((key2) => {
-        return `${key2} ${packages[key2]}`;
-      }).join("<br/>\n")}`
-    };
-  }
-  if (evaluation.tags) {
-    taskInformation["Tags"] = evaluation.tags.join(", ");
-  }
-  if (evaluation == null ? void 0 : evaluation.model) {
-    config2["model"] = evaluation.model;
-  }
-  if (evaluation == null ? void 0 : evaluation.model_base_url) {
-    config2["model_base_url"] = evaluation.model_base_url;
-  }
-  if (evaluation == null ? void 0 : evaluation.sandbox) {
-    config2["sandbox"] = evaluation.sandbox[0];
-    if (evaluation.sandbox[1]) {
-      config2["sandbox_config"] = evaluation.sandbox[1];
-    }
-  }
-  const floatingColumnStyle = {
-    flex: "0 1 1",
-    width: "unset",
-    textAlign: "left",
-    paddingLeft: "0.6rem",
-    paddingRight: "0.6rem"
-  };
-  const wideColumnStyle = {
-    flex: "1 1 1",
-    width: "unset",
-    paddingLeft: "0.6rem",
-    paddingRight: "0.6rem"
-  };
-  const oneColumnStyle = {
-    flex: "0 0 100%"
-  };
-  const twoColumnStyle = {
-    flex: "0 0 50%"
-  };
-  const planMetadataStyle = {
-    fontSize: FontSize.base
-  };
-  const taskColumns = [];
-  taskColumns.push({
-    title: "Dataset",
-    style: floatingColumnStyle,
-    contents: m$1`<${DatasetDetailView}
-      dataset=${evaluation.dataset}
-      context=${context}
-    />`
+const Tabs = ({ tabs, type, style }) => {
+  return tabs.map((tab, index) => {
+    return m$1` <${Tab}
+      type=${type || "tabs"}
+      tab=${tab}
+      index=${index}
+      style=${style}
+    />`;
   });
-  taskColumns.push({
-    title: "Plan",
-    style: wideColumnStyle,
-    contents: m$1`
-      <${SolversDetailView} steps=${steps} context=${context} />
-    `
-  });
-  if (scores) {
-    const scorers = scores.reduce((accum, score) => {
-      if (!accum[score.scorer]) {
-        accum[score.scorer] = {
-          scores: [score.name],
-          params: score.params
-        };
-      } else {
-        accum[score.scorer].scores.push(score.name);
-      }
-      return accum;
-    }, {});
-    if (Object.keys(scorers).length > 0) {
-      const label = Object.keys(scorers).length === 1 ? "Scorer" : "Scorers";
-      const scorerPanels = Object.keys(scorers).map((key2) => {
-        return m$1`<${ScorerDetailView}
-          name=${key2}
-          scores=${scorers[key2].scores}
-          params=${scorers[key2].params}
-          context=${context}
-        />`;
-      });
-      taskColumns.push({
-        title: label,
-        style: floatingColumnStyle,
-        contents: scorerPanels
-      });
-    }
-  }
-  const metadataColumns = [];
-  const cols = colCount(
-    metadataColumns,
-    task_args,
-    model_args,
-    config2,
-    metadata
-  );
-  const configColumnStyle = cols === 1 ? oneColumnStyle : twoColumnStyle;
-  metadataColumns.push({
-    title: "Task Information",
-    style: configColumnStyle,
-    contents: m$1`
-      <${MetaDataView}
-        style=${planMetadataStyle}
-        classes="task-title-deets-grid"
-        entries="${taskInformation}"
-        tableOptions="borderless,sm"
-        context=${context}
-      />
-    `
-  });
-  if (task_args && Object.keys(task_args).length > 0) {
-    metadataColumns.push({
-      title: "Task Args",
-      style: configColumnStyle,
-      contents: m$1`
-        <${MetaDataView}
-          style=${planMetadataStyle}
-          classes="task-plan-task-args-grid"
-          entries="${task_args}"
-          tableOptions="sm"
-          context=${context}
-        />
-      `
-    });
-  }
-  if (model_args && Object.keys(model_args).length > 0) {
-    metadataColumns.push({
-      title: "Model Args",
-      style: configColumnStyle,
-      contents: m$1`
-        <${MetaDataView}
-          style=${planMetadataStyle}
-          classes="task-plan-model-args-grid"
-          entries="${model_args}"
-          tableOptions="sm"
-          context=${context}
-        />
-      `
-    });
-  }
-  if (config2 && Object.keys(config2).length > 0) {
-    metadataColumns.push({
-      title: "Configuration",
-      style: configColumnStyle,
-      contents: m$1`
-        <${MetaDataView}
-          style=${planMetadataStyle}
-          classes="task-plan-configuration"
-          entries="${config2}"
-          tableOptions="sm"
-          context=${context}
-        />
-      `
-    });
-  }
-  if (generate_config && Object.keys(generate_config).length > 0) {
-    metadataColumns.push({
-      title: "Generate Config",
-      style: configColumnStyle,
-      contents: m$1`
-        <${MetaDataView}
-          style=${planMetadataStyle}
-          classes="task-plan-generate-configuration"
-          entries="${generate_config}"
-          tableOptions="sm"
-          context=${context}
-        />
-      `
-    });
-  }
-  if (metadata && Object.keys(metadata).length > 0) {
-    metadataColumns.push({
-      title: "Metadata",
-      style: configColumnStyle,
-      contents: m$1`
-        <${MetaDataView}
-          style=${planMetadataStyle}
-          classes="task-plan-metadata"
-          entries="${metadata}"
-          tableOptions="sm"
-          context=${context}
-        />
-      `
-    });
-  }
-  return m$1`
-    <div style=${{ paddingTop: "0", paddingBottom: "1em", marginLeft: "0" }}>
-      <div
-        style=${{
-    display: "grid",
-    gridTemplateColumns: `repeat(${taskColumns.length}, auto)`,
-    justifyContent: "space-between",
-    flexWrap: "wrap",
-    paddingBottom: "0.7rem",
-    borderBottom: "solid 1px var(--bs-border-color)"
-  }}
-      >
-        ${taskColumns.map((col) => {
-    return m$1`<${PlanColumn} title="${col.title}" style=${col.style}>
-        ${col.contents}
-      </${PlanColumn}>
-      `;
-  })}
-      </div>
-
-      <div
-        class="row"
-        style=${{ justifyContent: "flex-start", flexWrap: "wrap" }}
-      >
-        ${metadataColumns.map((col) => {
-    return m$1`<${PlanColumn} title="${col.title}" style=${col.style}>
-            ${col.contents}
-          </${PlanColumn}>
-          `;
-  })}
-      </div>
-    </div>
-  `;
 };
-const colCount = (...other) => {
-  let count = 0;
-  for (const o2 in other) {
-    if (o2 && Object.keys(o2).length > 0) {
-      count++;
-    }
-  }
-  return count;
-};
-const PlanColumn = ({ title, classes, style, children }) => {
-  return m$1`
-    <div class="${classes || ""}" ...${{ style }}>
-      <div
-        class="card-subheading"
-        style=${{
-    fontSize: FontSize.small,
+const Tab = ({ type, tab, index, style }) => {
+  const tabId = tab.props.id || computeTabId("tabset", index);
+  const tabContentsId = computeTabContentsId(tab.props.id, index);
+  const isActive = tab.props.selected;
+  const tabStyle = {
+    color: "var(--bs-body-color)",
+    ...style,
+    padding: "0.25rem 0.5rem",
+    borderTopLeftRadius: "var(--bs-border-radius)",
+    borderTopRightRadius: "var(--bs-border-radius)",
     ...TextStyle.label,
-    ...TextStyle.secondary,
-    marginTop: "1em"
+    fontSize: FontSize.small,
+    fontWeight: 500,
+    marginTop: "2px",
+    marginBottom: "-1px"
+  };
+  const pillStyle = {
+    ...style
+  };
+  return m$1`
+    <li class="nav-item" role="presentation" style=${{ alignSelf: "end" }}>
+      <button
+        id="${tabId}"
+        style=${type === "tabs" ? tabStyle : pillStyle}
+        class="nav-link ${isActive ? "active" : ""}"
+        data-bs-toggle="tab"
+        data-bs-target="#${tabContentsId}"
+        type="button"
+        role="tab"
+        aria-controls="${tabContentsId}"
+        aria-selected="${isActive ? true : false}"
+        ...${{
+    onclick: (e2) => {
+      tab.props.onSelected(e2);
+      return false;
+    }
   }}
       >
-        ${title}
-      </div>
-      ${children}
-    </div>
+        ${tab.props.icon ? m$1`<i
+              class="${tab.props.icon}"
+              style=${{ marginRight: "0.5em" }}
+            ></i>` : ""}
+        ${tab.props.title}
+      </button>
+    </li>
   `;
 };
-const LargeModal = (props) => {
-  const {
-    id,
-    title,
-    detail,
-    detailTools,
-    footer,
-    onkeyup,
-    visible,
-    onHide,
-    showProgress,
-    children
-  } = props;
-  const modalFooter = footer ? m$1`<div class="modal-footer">${footer}</div>` : "";
-  const headerEls = [];
-  headerEls.push(
-    m$1`<div
-      class="modal-title"
-      style=${{ fontSize: FontSize.smaller, flex: "1 1 auto" }}
-    >
-      ${title || ""}
-    </div>`
-  );
-  if (detail) {
-    headerEls.push(
-      m$1`<div
-        style=${{
-        marginLeft: "auto",
-        marginRight: "auto",
-        display: "flex",
-        flex: "1 1 auto",
-        justifyContent: "center"
-      }}
-      >
-        ${detailTools.left ? detailTools.left.map((tool) => {
-        return m$1`<${TitleTool} ...${tool} />`;
-      }) : ""}
-        <div
-          style=${{
-        fontSize: FontSize.smaller,
-        display: "flex",
-        alignItems: "center"
-      }}
-        >
-          <div>${detail}</div>
-        </div>
-        ${detailTools.right ? detailTools.right.map((tool) => {
-        return m$1`<${TitleTool} ...${tool} />`;
-      }) : ""}
-      </div>`
-    );
-  }
-  headerEls.push(m$1`<button
-      type="button"
-      class="btn btn-close-large-dialog"
-      onclick=${() => {
-    onHide();
-  }}
-      aria-label="Close"
-      style=${{
-    borderWidth: "0px",
-    fontSize: FontSize.larger,
-    fontWeight: "300",
-    padding: "0em 0.5em",
-    flex: 1,
-    textAlign: "right"
-  }}
-    >
-      <${HtmlEntity}>&times;</${HtmlEntity}>
-    </button>`);
+const TabTools = ({ tools }) => {
   return m$1`<div
-    id=${id}
-    class="modal"
-    tabindex="0"
-    role="dialog"
-    onkeyup=${onkeyup}
+    class="tab-tools"
     style=${{
-    borderRadius: "var(--bs-border-radius)",
-    display: visible ? "block" : "none"
+    flexBasis: "auto",
+    marginLeft: "auto",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "end",
+    flexWrap: "wrap",
+    rowGap: "0.3rem"
   }}
-    tabindex=${visible ? 0 : void 0}
   >
-    <div
-      class="modal-dialog modal-dialog-scrollable"
-      style=${{
-    maxWidth: "100%",
-    marginLeft: "var(--bs-modal-margin)",
-    marginRight: "var(--bs-modal-margin)"
-  }}
-      role="document"
-    >
-      <div class="modal-content" style=${{ height: "100%" }}>
-        <div
-          class="modal-header"
-          style=${{ padding: "0 0 0 1em", display: "flex" }}
-        >
-          ${headerEls}
-        </div>
-        <${ProgressBar}
-          animating=${showProgress}
-          containerStyle=${{
-    marginBottom: "-2px",
-    backgroundColor: "var(--bs-body-bg)"
-  }}
-        />
-        <div class="modal-body">${children}</div>
-        ${modalFooter}
-      </div>
-    </div>
+    ${tools}
   </div>`;
 };
-const HtmlEntity = ({ children }) => m$1`<span dangerouslySetInnerHTML=${{ __html: children }} />`;
-const TitleTool = ({ label, icon, enabled, onclick }) => {
-  return m$1`<button
-    type="button"
-    class="btn btn-outline"
-    aria-label=${label}
-    onclick=${onclick}
-    disabled=${!enabled}
-    style=${{
-    paddingTop: 0,
-    paddingBottom: 0,
-    border: "none",
-    fontSize: FontSize.small
-  }}
-  >
-    <i class="${icon}" />
-  </button>`;
+const TabPanels = ({ id, tabs, style }) => {
+  return m$1`<div class="tab-content" id="${id}-content" style=${{ ...style }}>
+    ${tabs.map((tab, index) => {
+    tab.props.index = index;
+    return tab;
+  })}
+  </div>`;
+};
+const computeTabId = (id, index) => {
+  return `${id}-${index}`;
+};
+const computeTabContentsId = (id, index) => {
+  return `${id}-contents-${index}`;
 };
 function escapeSelector(id) {
   return id.replace(/([ #.;,?!+*~'":^$[\]()=>|/\\])/g, "\\$1");
@@ -14768,6 +14191,67 @@ const Rendered = ({ values }) => {
     return values;
   }
 };
+const CardHeader = ({ id, icon, label, classes, style, children }) => {
+  return m$1`<div
+    class="${classes || ""}"
+    ...${{ id }}
+    style=${{
+    display: "grid",
+    gridTemplateColumns: "max-content auto",
+    columnGap: "0em",
+    padding: "0.5em 0.5em 0.5em 0.5em",
+    fontSize: FontSize.small,
+    fontWeight: 600,
+    ...TextStyle.label,
+    ...style
+  }}
+  >
+    ${icon ? m$1`<i
+          class="${icon}"
+          style=${{
+    paddingRight: "0.2rem"
+  }}
+        ></i>` : m$1`<span
+          style=${{
+    paddingRight: "0.2rem"
+  }}
+        ></span>`}
+    ${label ? label : ""} ${children}
+  </div> `;
+};
+const CardBody = ({ id, classes, style, children }) => {
+  return m$1`<div
+    class="${classes || ""}"
+    ...${{ id }}
+    style=${{
+    backgroundColor: "var(--bs-body-bg)",
+    border: "solid 1px var(--bs-light-border-subtle)",
+    borderRadius: "var(--bs-border-radius)",
+    margin: "0 8px 8px 8px",
+    padding: "0.5em",
+    ...style
+  }}
+  >
+    ${children}
+  </div>`;
+};
+const Card = ({ id, classes, style, children }) => {
+  return m$1`
+    <div
+      class="${classes || ""}"
+      ...${{ id }}
+      style=${{
+    backgroundColor: "var(--bs-light-bg-subtle)",
+    border: "solid 1px var(--bs-light-border-subtle)",
+    borderRadius: "var(--bs-border-radius)",
+    marginBottom: "1.5em",
+    ...style
+  }}
+    >
+      ${children}
+    </div>
+  `;
+};
 const ModelTokenTable = ({ model_usage, style }) => {
   return m$1`
   <${TokenTable} style=${style}>
@@ -15603,6 +15087,16 @@ const errorType = (message2) => {
   }
   return "Error";
 };
+const ToolButton = ({ name, classes, icon, onclick, ...rest }) => {
+  const attr = {
+    type: "button",
+    class: `btn btn-tools ${classes || ""}`,
+    onclick,
+    ...rest
+  };
+  const iconEl = icon ? m$1`<i class="${icon}" style=${{ marginRight: "0.5em" }}></i>` : "";
+  return _("button", attr, m$1`${iconEl}${name}`);
+};
 const printHtml = (html, css) => {
   const printWindow = window.open("", "", "height=600,width=800");
   printWindow.document.write("<html><head><title>Print</title>");
@@ -15635,6 +15129,87 @@ const printHeadingHtml = () => {
 <div style="text-align: right;">${time}</div>
 </div>`;
   return headingHtml;
+};
+const ErrorPanel = ({ id, classes, title, error: error2 }) => {
+  const emptyStyle = {
+    display: "flex",
+    flex: "0 0 content",
+    alignItems: "center",
+    justifyContent: "center"
+  };
+  const message2 = error2.message;
+  const stack2 = error2.stack;
+  return m$1`
+    <div style=${{ overflowY: "auto", height: "100vh" }}>
+      <div
+        ...${{ id }}
+        class="${classes ? classes : ""}"
+        style=${{
+    ...emptyStyle,
+    flexDirection: "column",
+    minHeight: "10rem",
+    marginTop: "4rem",
+    marginBottom: "4em",
+    width: "100vw"
+  }}
+      >
+        <div style=${{ ...emptyStyle, fontSize: FontSize.larger }}>
+          <div>
+            <i
+              class="${ApplicationIcons.error}"
+              style="${{ marginRight: "0.5rem", color: "var(--bs-red)" }}"
+            ></i>
+          </div>
+          <div>${title || ""}</div>
+        </div>
+        <div
+          style=${{
+    display: "inline-block",
+    fontSize: FontSize.smaller,
+    marginTop: "1rem",
+    border: "solid 1px var(--bs-border-color)",
+    borderRadius: "var(--bs-border-radius)",
+    padding: "1em",
+    maxWidth: "80%"
+  }}
+        >
+          <div>
+            Error: ${message2 || ""}
+            ${stack2 && m$1`
+              <pre
+                style=${{ fontSize: FontSize.smaller, whiteSpace: "pre-wrap" }}
+              >
+            <code>
+              at ${stack2}
+            </code>
+          </pre>
+            `}
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+};
+const EmptyPanel = ({ id, classes, height, style, children }) => {
+  const emptyStyle = {
+    display: "flex",
+    textAlign: "center",
+    flex: "0 0 content",
+    alignItems: "center",
+    justifyContent: "center",
+    height: height ? height : "10rem"
+  };
+  return m$1`
+    <div
+      ...${{ id }}
+      class="${classes ? classes : ""}"
+      style=${{ width: "100%" }}
+    >
+      <div style=${{ ...emptyStyle, ...style }}>
+        <div>${children || ""}</div>
+      </div>
+    </div>
+  `;
 };
 const kEvalWorkspaceTabId = "eval-tab";
 const kJsonWorkspaceTabId = "json-tab";
@@ -16041,24 +15616,22 @@ const SampleDialog = ({
   setSelectedTab,
   context
 }) => {
-  const tools = T(() => {
-    const nextTool = {
-      label: "Next Sample",
-      icon: ApplicationIcons.next,
-      onclick: nextSample,
-      enabled: !!nextSample
-    };
-    const prevTool = {
-      label: "Previous Sample",
-      icon: ApplicationIcons.previous,
-      onclick: prevSample,
-      enabled: !!prevSample
-    };
-    return {
-      left: [prevTool],
-      right: [nextTool]
-    };
-  }, [prevSample, nextSample]);
+  const nextTool = {
+    label: "Next Sample",
+    icon: ApplicationIcons.next,
+    onclick: nextSample,
+    enabled: !!nextSample
+  };
+  const prevTool = {
+    label: "Previous Sample",
+    icon: ApplicationIcons.previous,
+    onclick: prevSample,
+    enabled: !!prevSample
+  };
+  const tools = {
+    left: [prevTool],
+    right: [nextTool]
+  };
   const handleKeyUp = q(
     (e2) => {
       switch (e2.key) {
@@ -16100,6 +15673,431 @@ const SampleDialog = ({
                 context=${context}
               />`}
     </${LargeModal}>`;
+};
+const filename = (path) => {
+  const pathparts = path.split("/");
+  const basename = pathparts.slice(-1)[0];
+  const match3 = basename.match(/(.*)\.\S+$/);
+  if (match3) {
+    return match3[1];
+  } else {
+    return path;
+  }
+};
+const dirname = (path) => {
+  const pathparts = path.split("/");
+  if (pathparts.length > 1) {
+    pathparts.pop();
+  }
+  return pathparts.join("/");
+};
+const clearDocumentSelection = () => {
+  const sel = window.getSelection();
+  if (sel) {
+    if (sel.removeAllRanges) {
+      sel.removeAllRanges();
+    } else if (sel.empty) {
+      sel.empty();
+    }
+  }
+};
+class AppErrorBoundary extends k$1 {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false };
+  }
+  static getDerivedStateFromError(error2) {
+    return { hasError: true, error: error2 };
+  }
+  componentDidCatch(error2, errorInfo) {
+    console.log({ error: error2, errorInfo });
+  }
+  render() {
+    if (this.state.hasError) {
+      console.error({ e: this.state.error });
+      return m$1`<${ErrorPanel}
+        title="An unexpected error occurred."
+        error="${this.state.error}"
+      />`;
+    }
+    return this.props.children;
+  }
+}
+const ghCommitUrl = (origin, commit) => {
+  const baseUrl = origin.replace(/\.git$/, "");
+  return `${baseUrl}/commit/${commit}`;
+};
+const kPlanCardBodyId = "task-plan-card-body";
+const PlanCard = ({ evalSpec, evalPlan, scores, context }) => {
+  return m$1`
+    <${Card}>
+      <${CardHeader} icon=${ApplicationIcons.config} label="Config"/>
+      <${CardBody} id="${kPlanCardBodyId}" style=${{
+    paddingTop: "0",
+    paddingBottom: "0"
+  }}>
+      
+        <${PlanDetailView}
+          evaluation=${evalSpec}
+          plan=${evalPlan}
+          scores=${scores}
+          context=${context}
+        />
+      </${CardBody}>
+    </${Card}>
+  `;
+};
+const planItemStyle = {
+  fontSize: FontSize.base,
+  marginBottom: "0em"
+};
+const planSepStyle = {
+  marginLeft: ".3em",
+  marginRight: ".3em",
+  marginTop: "em",
+  marginBottom: "-0.1em"
+};
+const ScorerDetailView = ({ name, scores, params, context }) => {
+  if (scores.length > 1) {
+    params["scores"] = scores;
+  }
+  return m$1`<${DetailStep}
+    icon=${ApplicationIcons.scorer}
+    name=${name}
+    params=${params}
+    context=${context}
+    style=${planItemStyle}
+  />`;
+};
+const DatasetDetailView = ({ dataset, context, style }) => {
+  const filtered = Object.fromEntries(
+    Object.entries(dataset).filter(([key2]) => key2 !== "sample_ids")
+  );
+  if (!dataset || Object.keys(filtered).length === 0) {
+    return m$1`<span style=${{ ...planItemStyle, ...style }}
+      >No dataset information available</span
+    >`;
+  }
+  return m$1`<${MetaDataView}
+    entries="${filtered}"
+    tableOptions="borderless,sm"
+    context=${context}
+    style=${{ ...planItemStyle, ...style }}
+  />`;
+};
+const SolversDetailView = ({ steps, context }) => {
+  const separator = m$1` <div style=${{ ...planItemStyle, ...planSepStyle }}>
+    <i class="${ApplicationIcons.arrows.right}"></i>
+  </div>`;
+  const details = steps == null ? void 0 : steps.map((step, index) => {
+    return m$1`
+      <${DetailStep}
+        name=${step.solver}
+        context=${context}
+        style=${planItemStyle}
+      />
+      ${index < steps.length - 1 ? separator : ""}
+    `;
+  });
+  return m$1`<div
+    style=${{
+    display: "flex",
+    flexDirection: "columns"
+  }}
+  >
+    ${details}
+  </div>`;
+};
+const DetailStep = ({ icon, name, params, style, context }) => {
+  const iconHtml = icon ? m$1`<i class="${icon}" style=${{ marginRight: ".3em" }}></i>` : "";
+  return m$1`
+    <div style=${style}>
+      ${iconHtml} ${name}
+      <div
+        style=${{
+    marginLeft: "1.3rem",
+    marginTop: "0.2rem",
+    marginBottom: "0.3rem"
+  }}
+      >
+        ${m$1`<${MetaDataView}
+          entries="${params}"
+          context=${context}
+          style=${{ fontSize: FontSize.small }}
+        />`}
+      </div>
+    </div>
+  `;
+};
+const PlanDetailView = ({ evaluation, plan, context, scores }) => {
+  if (!evaluation) {
+    return "";
+  }
+  const config2 = (evaluation == null ? void 0 : evaluation.config) || {};
+  const steps = plan == null ? void 0 : plan.steps;
+  const metadata = evaluation == null ? void 0 : evaluation.metadata;
+  const revision = evaluation == null ? void 0 : evaluation.revision;
+  const packages = evaluation == null ? void 0 : evaluation.packages;
+  const model_args = evaluation == null ? void 0 : evaluation.model_args;
+  const task_args = evaluation == null ? void 0 : evaluation.task_args;
+  const generate_config = plan == null ? void 0 : plan.config;
+  const taskInformation = {
+    ["Task ID"]: evaluation == null ? void 0 : evaluation.task_id,
+    ["Run ID"]: evaluation == null ? void 0 : evaluation.run_id
+  };
+  if (revision) {
+    taskInformation[`${revision.type ? `${toTitleCase(revision.type)} ` : ""}Revision`] = {
+      _html: m$1`<a href="${ghCommitUrl(revision.origin, revision.commit)}"
+        >${revision.commit}</a
+      >`
+    };
+  }
+  if (packages) {
+    taskInformation["Inspect"] = {
+      _html: m$1`${Object.keys(packages).map((key2) => {
+        return `${key2} ${packages[key2]}`;
+      }).join("<br/>\n")}`
+    };
+  }
+  if (evaluation.tags) {
+    taskInformation["Tags"] = evaluation.tags.join(", ");
+  }
+  if (evaluation == null ? void 0 : evaluation.model) {
+    config2["model"] = evaluation.model;
+  }
+  if (evaluation == null ? void 0 : evaluation.model_base_url) {
+    config2["model_base_url"] = evaluation.model_base_url;
+  }
+  if (evaluation == null ? void 0 : evaluation.sandbox) {
+    config2["sandbox"] = evaluation.sandbox[0];
+    if (evaluation.sandbox[1]) {
+      config2["sandbox_config"] = evaluation.sandbox[1];
+    }
+  }
+  const floatingColumnStyle = {
+    flex: "0 1 1",
+    width: "unset",
+    textAlign: "left",
+    paddingLeft: "0.6rem",
+    paddingRight: "0.6rem"
+  };
+  const wideColumnStyle = {
+    flex: "1 1 1",
+    width: "unset",
+    paddingLeft: "0.6rem",
+    paddingRight: "0.6rem"
+  };
+  const oneColumnStyle = {
+    flex: "0 0 100%"
+  };
+  const twoColumnStyle = {
+    flex: "0 0 50%"
+  };
+  const planMetadataStyle = {
+    fontSize: FontSize.base
+  };
+  const taskColumns = [];
+  taskColumns.push({
+    title: "Dataset",
+    style: floatingColumnStyle,
+    contents: m$1`<${DatasetDetailView}
+      dataset=${evaluation.dataset}
+      context=${context}
+    />`
+  });
+  taskColumns.push({
+    title: "Plan",
+    style: wideColumnStyle,
+    contents: m$1`
+      <${SolversDetailView} steps=${steps} context=${context} />
+    `
+  });
+  if (scores) {
+    const scorers = scores.reduce((accum, score) => {
+      if (!accum[score.scorer]) {
+        accum[score.scorer] = {
+          scores: [score.name],
+          params: score.params
+        };
+      } else {
+        accum[score.scorer].scores.push(score.name);
+      }
+      return accum;
+    }, {});
+    if (Object.keys(scorers).length > 0) {
+      const label = Object.keys(scorers).length === 1 ? "Scorer" : "Scorers";
+      const scorerPanels = Object.keys(scorers).map((key2) => {
+        return m$1`<${ScorerDetailView}
+          name=${key2}
+          scores=${scorers[key2].scores}
+          params=${scorers[key2].params}
+          context=${context}
+        />`;
+      });
+      taskColumns.push({
+        title: label,
+        style: floatingColumnStyle,
+        contents: scorerPanels
+      });
+    }
+  }
+  const metadataColumns = [];
+  const cols = colCount(
+    metadataColumns,
+    task_args,
+    model_args,
+    config2,
+    metadata
+  );
+  const configColumnStyle = cols === 1 ? oneColumnStyle : twoColumnStyle;
+  metadataColumns.push({
+    title: "Task Information",
+    style: configColumnStyle,
+    contents: m$1`
+      <${MetaDataView}
+        style=${planMetadataStyle}
+        classes="task-title-deets-grid"
+        entries="${taskInformation}"
+        tableOptions="borderless,sm"
+        context=${context}
+      />
+    `
+  });
+  if (task_args && Object.keys(task_args).length > 0) {
+    metadataColumns.push({
+      title: "Task Args",
+      style: configColumnStyle,
+      contents: m$1`
+        <${MetaDataView}
+          style=${planMetadataStyle}
+          classes="task-plan-task-args-grid"
+          entries="${task_args}"
+          tableOptions="sm"
+          context=${context}
+        />
+      `
+    });
+  }
+  if (model_args && Object.keys(model_args).length > 0) {
+    metadataColumns.push({
+      title: "Model Args",
+      style: configColumnStyle,
+      contents: m$1`
+        <${MetaDataView}
+          style=${planMetadataStyle}
+          classes="task-plan-model-args-grid"
+          entries="${model_args}"
+          tableOptions="sm"
+          context=${context}
+        />
+      `
+    });
+  }
+  if (config2 && Object.keys(config2).length > 0) {
+    metadataColumns.push({
+      title: "Configuration",
+      style: configColumnStyle,
+      contents: m$1`
+        <${MetaDataView}
+          style=${planMetadataStyle}
+          classes="task-plan-configuration"
+          entries="${config2}"
+          tableOptions="sm"
+          context=${context}
+        />
+      `
+    });
+  }
+  if (generate_config && Object.keys(generate_config).length > 0) {
+    metadataColumns.push({
+      title: "Generate Config",
+      style: configColumnStyle,
+      contents: m$1`
+        <${MetaDataView}
+          style=${planMetadataStyle}
+          classes="task-plan-generate-configuration"
+          entries="${generate_config}"
+          tableOptions="sm"
+          context=${context}
+        />
+      `
+    });
+  }
+  if (metadata && Object.keys(metadata).length > 0) {
+    metadataColumns.push({
+      title: "Metadata",
+      style: configColumnStyle,
+      contents: m$1`
+        <${MetaDataView}
+          style=${planMetadataStyle}
+          classes="task-plan-metadata"
+          entries="${metadata}"
+          tableOptions="sm"
+          context=${context}
+        />
+      `
+    });
+  }
+  return m$1`
+    <div style=${{ paddingTop: "0", paddingBottom: "1em", marginLeft: "0" }}>
+      <div
+        style=${{
+    display: "grid",
+    gridTemplateColumns: `repeat(${taskColumns.length}, auto)`,
+    justifyContent: "space-between",
+    flexWrap: "wrap",
+    paddingBottom: "0.7rem",
+    borderBottom: "solid 1px var(--bs-border-color)"
+  }}
+      >
+        ${taskColumns.map((col) => {
+    return m$1`<${PlanColumn} title="${col.title}" style=${col.style}>
+        ${col.contents}
+      </${PlanColumn}>
+      `;
+  })}
+      </div>
+
+      <div
+        class="row"
+        style=${{ justifyContent: "flex-start", flexWrap: "wrap" }}
+      >
+        ${metadataColumns.map((col) => {
+    return m$1`<${PlanColumn} title="${col.title}" style=${col.style}>
+            ${col.contents}
+          </${PlanColumn}>
+          `;
+  })}
+      </div>
+    </div>
+  `;
+};
+const colCount = (...other) => {
+  let count = 0;
+  for (const o2 in other) {
+    if (o2 && Object.keys(o2).length > 0) {
+      count++;
+    }
+  }
+  return count;
+};
+const PlanColumn = ({ title, classes, style, children }) => {
+  return m$1`
+    <div class="${classes || ""}" ...${{ style }}>
+      <div
+        class="card-subheading"
+        style=${{
+    fontSize: FontSize.small,
+    ...TextStyle.label,
+    ...TextStyle.secondary,
+    marginTop: "1em"
+  }}
+      >
+        ${title}
+      </div>
+      ${children}
+    </div>
+  `;
 };
 function throttle(func, wait, options) {
   var context, args, result;
@@ -16549,42 +16547,21 @@ const SamplesTab = ({
   sampleError,
   selectedSampleIndex,
   setSelectedSampleIndex,
-  showingSampleDialog,
   setShowingSampleDialog,
+  nextSample,
+  previousSample,
   selectedSampleTab,
   setSelectedSampleTab,
   context
 }) => {
   const [items, setItems] = h([]);
-  const [sampleItems, setSampleItems] = h([]);
-  const sampleListRef = A(
-    /** @type {HTMLElement|null} */
-    null
-  );
-  const sampleDialogRef = A(
-    /** @type {HTMLElement|null} */
-    null
-  );
   const showSample = q(
-    (index2) => {
-      setSelectedSampleIndex(index2);
+    (index) => {
+      setSelectedSampleIndex(index);
       setShowingSampleDialog(true);
     },
-    [sampleDialogRef]
+    [setSelectedSampleIndex, setShowingSampleDialog]
   );
-  y(() => {
-    if (showingSampleDialog) {
-      setTimeout(() => {
-        sampleDialogRef.current.base.focus();
-      }, 0);
-    } else {
-      setTimeout(() => {
-        if (sampleListRef.current) {
-          sampleListRef.current.base.focus();
-        }
-      }, 0);
-    }
-  }, [showingSampleDialog]);
   y(() => {
     const sampleProcessor = getSampleProcessor(
       samples,
@@ -16592,42 +16569,15 @@ const SamplesTab = ({
       groupByOrder,
       sampleDescriptor
     );
-    const items2 = samples.flatMap((sample2, index2) => {
+    const items2 = samples.flatMap((sample2, index) => {
       const results = [];
-      const previousSample2 = index2 !== 0 ? samples[index2 - 1] : void 0;
-      const items3 = sampleProcessor(sample2, index2, previousSample2);
+      const previousSample2 = index !== 0 ? samples[index - 1] : void 0;
+      const items3 = sampleProcessor(sample2, index, previousSample2);
       results.push(...items3);
       return results;
     });
     setItems(items2);
-    setSampleItems(
-      items2.filter((item) => {
-        return item.type === "sample";
-      })
-    );
   }, [samples, groupBy, groupByOrder, sampleDescriptor]);
-  const nextSampleIndex = q(() => {
-    if (selectedSampleIndex < sampleItems.length - 1) {
-      return selectedSampleIndex + 1;
-    } else {
-      return -1;
-    }
-  }, [selectedSampleIndex, items]);
-  const previousSampleIndex = q(() => {
-    return selectedSampleIndex > 0 ? selectedSampleIndex - 1 : -1;
-  }, [selectedSampleIndex, items]);
-  const nextSample = q(() => {
-    const next = nextSampleIndex();
-    if (sampleStatus !== "loading" && next > -1) {
-      setSelectedSampleIndex(next);
-    }
-  }, [selectedSampleIndex, samples, sampleStatus, nextSampleIndex]);
-  const previousSample = q(() => {
-    const prev = previousSampleIndex();
-    if (sampleStatus !== "loading" && prev > -1) {
-      setSelectedSampleIndex(prev);
-    }
-  }, [selectedSampleIndex, samples, sampleStatus, previousSampleIndex]);
   const elements = [];
   if (sampleMode === "single") {
     elements.push(
@@ -16646,7 +16596,6 @@ const SamplesTab = ({
   } else if (sampleMode === "many") {
     elements.push(
       m$1`<${SampleList}
-        listRef=${sampleListRef}
         items=${items}
         sampleDescriptor=${sampleDescriptor}
         selectedIndex=${selectedSampleIndex}
@@ -16660,28 +16609,6 @@ const SamplesTab = ({
   } else {
     elements.push(m$1`<${EmptyPanel} />`);
   }
-  const title = selectedSampleIndex > -1 && sampleItems.length > selectedSampleIndex ? sampleItems[selectedSampleIndex].label : "";
-  const index = selectedSampleIndex > -1 && sampleItems.length > selectedSampleIndex ? sampleItems[selectedSampleIndex].index : -1;
-  elements.push(m$1`
-    <${SampleDialog}
-      id=${(sample == null ? void 0 : sample.id) || ""}
-      ref=${sampleDialogRef}
-      task=${task_id}
-      title=${title}
-      index=${index}
-      sample=${sample}
-      sampleStatus=${sampleStatus}
-      sampleError=${sampleError}
-      sampleDescriptor=${sampleDescriptor}
-      showingSampleDialog=${showingSampleDialog}
-      setShowingSampleDialog=${setShowingSampleDialog}
-      selectedTab=${selectedSampleTab}
-      setSelectedTab=${setSelectedSampleTab}
-      nextSample=${nextSample}
-      prevSample=${previousSample}
-      context=${context}
-    />
-  `);
   return elements;
 };
 const getSampleProcessor = (samples, groupBy, groupByOrder, sampleDescriptor) => {
@@ -20385,10 +20312,11 @@ const TaskView = ({
   samplesDescriptor,
   selectedSampleIndex,
   setSelectedSampleIndex,
-  showingSampleDialog,
   setShowingSampleDialog,
   selectedSampleTab,
   setSelectedSampleTab,
+  nextSample,
+  previousSample,
   sampleStatus,
   sampleError,
   sort,
@@ -20430,7 +20358,6 @@ const TaskView = ({
           sample=${selectedSample}
           sampleStatus=${sampleStatus}
           sampleError=${sampleError}
-          showingSampleDialog=${showingSampleDialog}
           setShowingSampleDialog=${setShowingSampleDialog}
           samples=${samples}
           sampleMode=${sampleMode}
@@ -20441,6 +20368,8 @@ const TaskView = ({
           sampleDescriptor=${samplesDescriptor}
           selectedSampleTab=${selectedSampleTab}
           setSelectedSampleTab=${setSelectedSampleTab}
+          nextSample=${nextSample}
+          previousSample=${previousSample}
           filter=${filter}
           sort=${sort}
           epoch=${epoch}
@@ -21986,7 +21915,7 @@ function App({
   saveInitialState = void 0,
   pollForLogs = true
 }) {
-  var _a2, _b2, _c, _d, _e, _f, _g, _h, _i, _j, _k, _l, _m, _n, _o, _p, _q;
+  var _a2, _b2, _c, _d, _e, _f, _g, _h, _i, _j, _k, _l, _m, _n, _o, _p, _q, _r, _s, _t;
   const [logs, setLogs] = h(
     (initialState2 == null ? void 0 : initialState2.logs) || { log_dir: "", files: [] }
   );
@@ -22177,6 +22106,14 @@ function App({
     setSelectedLogIndex(-1);
   }, [setSelectedLogIndex, setSelectedLog]);
   const mainAppRef = A();
+  const sampleDialogRef = A(
+    /** @type {HTMLElement|null} */
+    null
+  );
+  const taskListRef = A(
+    /** @type {HTMLElement|null} */
+    null
+  );
   y(() => {
     var _a3;
     if (!selectedLog || selectedSampleIndex === -1) {
@@ -22511,6 +22448,40 @@ function App({
   }, [showFind, setShowFind]);
   const showToggle = logs.files.length > 1 || logs.log_dir;
   const sampleMode = ((_e = selectedLog == null ? void 0 : selectedLog.contents) == null ? void 0 : _e.sampleSummaries) === void 0 || selectedLog.contents.sampleSummaries.length === 0 ? "none" : selectedLog.contents.sampleSummaries.length === 1 ? "single" : "many";
+  const nextSampleIndex = q(() => {
+    if (selectedSampleIndex < filteredSamples.length - 1) {
+      return selectedSampleIndex + 1;
+    } else {
+      return -1;
+    }
+  }, [selectedSampleIndex, filteredSamples]);
+  const previousSampleIndex = q(() => {
+    return selectedSampleIndex > 0 ? selectedSampleIndex - 1 : -1;
+  }, [selectedSampleIndex, filteredSamples]);
+  const nextSample = q(() => {
+    const next = nextSampleIndex();
+    if (sampleStatus !== "loading" && next > -1) {
+      setSelectedSampleIndex(next);
+    }
+  }, [selectedSampleIndex, filteredSamples, sampleStatus, nextSampleIndex]);
+  const previousSample = q(() => {
+    const prev = previousSampleIndex();
+    if (sampleStatus !== "loading" && prev > -1) {
+      setSelectedSampleIndex(prev);
+    }
+  }, [selectedSampleIndex, filteredSamples, sampleStatus, previousSampleIndex]);
+  y(() => {
+    if (showingSampleDialog) {
+      setTimeout(() => {
+        sampleDialogRef.current.base.focus();
+      }, 0);
+    } else {
+      setTimeout(() => {
+        if (taskListRef.current) ;
+      }, 0);
+    }
+  }, [showingSampleDialog]);
+  const sampleTitle = selectedSample ? `Sample ${selectedSample.id} ${((_f = selectedLog.contents) == null ? void 0 : _f.eval.config.epochs) > 1 ? `Epoch ${selectedSample.epoch}` : ""}` : "";
   return m$1`
     <${AppErrorBoundary}>
     <div ref=${mainAppRef} class="app-main-grid" tabIndex="0" onKeyDown=${(e2) => {
@@ -22531,61 +22502,83 @@ function App({
       ${status.error ? m$1`<${ErrorPanel}
               title="An error occurred while loading this task."
               error=${status.error}
-            />` : selectedLog.contents === void 0 ? m$1`<${TaskList}
-                status=${headersLoading ? "loading" : "ok"}
-                logDir=${logs.log_dir}
-                logCount=${logs.files.length}
-                logHeaders=${logHeaders}
-                selectedLogIndex=${selectedLogIndex}
-                onSelectedLogIndex=${(idx) => {
+            />` : showingSampleDialog ? m$1`
+                <${SampleDialog}
+                  id=${(selectedSample == null ? void 0 : selectedSample.id) || ""}
+                  title=${sampleTitle}
+                  ref=${sampleDialogRef}
+                  task_id=${(_h = (_g = selectedLog == null ? void 0 : selectedLog.contents) == null ? void 0 : _g.eval) == null ? void 0 : _h.task_id}
+                  sample=${selectedSample}
+                  sampleStatus=${sampleStatus}
+                  sampleError=${sampleError}
+                  sampleDescriptor=${samplesDescriptor}
+                  showingSampleDialog=${showingSampleDialog}
+                  setShowingSampleDialog=${setShowingSampleDialog}
+                  selectedTab=${selectedSampleTab}
+                  setSelectedTab=${setSelectedSampleTab}
+                  nextSample=${nextSample}
+                  prevSample=${previousSample}
+                  context=${context}
+                />
+              ` : selectedLog.contents === void 0 ? m$1`<${TaskList}
+                  ref=${taskListRef}
+                  status=${headersLoading ? "loading" : "ok"}
+                  logDir=${logs.log_dir}
+                  logCount=${logs.files.length}
+                  logHeaders=${logHeaders}
+                  selectedLogIndex=${selectedLogIndex}
+                  onSelectedLogIndex=${(idx) => {
     setSelectedLogIndex(idx);
   }}
-                page=${logHeaderPage}
-                pageCount="${Math.ceil(logs.files.length / logHeaderPageSize)}"
-                onPageChanged="${setLogHeaderPage}"
-              />` : m$1`<${TaskView}
-                task_id=${(_g = (_f = selectedLog == null ? void 0 : selectedLog.contents) == null ? void 0 : _f.eval) == null ? void 0 : _g.task_id}
-                logFileName=${selectedLog == null ? void 0 : selectedLog.name}
-                evalStatus=${(_h = selectedLog == null ? void 0 : selectedLog.contents) == null ? void 0 : _h.status}
-                evalError=${(_i = selectedLog == null ? void 0 : selectedLog.contents) == null ? void 0 : _i.error}
-                evalVersion=${(_j = selectedLog == null ? void 0 : selectedLog.contents) == null ? void 0 : _j.version}
-                evalSpec=${(_k = selectedLog == null ? void 0 : selectedLog.contents) == null ? void 0 : _k.eval}
-                evalPlan=${(_l = selectedLog == null ? void 0 : selectedLog.contents) == null ? void 0 : _l.plan}
-                evalStats=${(_m = selectedLog == null ? void 0 : selectedLog.contents) == null ? void 0 : _m.stats}
-                evalResults=${(_n = selectedLog == null ? void 0 : selectedLog.contents) == null ? void 0 : _n.results}
-                showToggle=${showToggle}
-                onToggle=${clearSelectedLog}
-                samples=${filteredSamples}
-                sampleMode=${sampleMode}
-                groupBy=${groupBy}
-                groupByOrder=${groupByOrder}
-                sampleStatus=${sampleStatus}
-                sampleError=${sampleError}
-                samplesDescriptor=${samplesDescriptor}
-                refreshLog=${refreshLog}
-                capabilities=${capabilities}
-                selected=${selectedLogIndex}
-                selectedSample=${selectedSample}
-                selectedSampleIndex=${selectedSampleIndex}
-                setSelectedSampleIndex=${setSelectedSampleIndex}
-                showingSampleDialog=${showingSampleDialog}
-                setShowingSampleDialog=${handleSampleShowingDialog}
-                selectedTab=${selectedWorkspaceTab}
-                setSelectedTab=${setSelectedWorkspaceTab}
-                selectedSampleTab=${selectedSampleTab}
-                setSelectedSampleTab=${setSelectedSampleTab}
-                sort=${sort}
-                setSort=${setSort}
-                epochs=${(_q = (_p = (_o = selectedLog == null ? void 0 : selectedLog.contents) == null ? void 0 : _o.eval) == null ? void 0 : _p.config) == null ? void 0 : _q.epochs}
-                epoch=${epoch}
-                setEpoch=${setEpoch}
-                filter=${filter}
-                setFilter=${setFilter}
-                score=${score}
-                setScore=${setScore}
-                scores=${scores}
-                renderContext=${context}
-              />`}
+                  page=${logHeaderPage}
+                  pageCount="${Math.ceil(
+    logs.files.length / logHeaderPageSize
+  )}"
+                  onPageChanged="${setLogHeaderPage}"
+                />` : m$1`<${TaskView}
+                  task_id=${(_j = (_i = selectedLog == null ? void 0 : selectedLog.contents) == null ? void 0 : _i.eval) == null ? void 0 : _j.task_id}
+                  logFileName=${selectedLog == null ? void 0 : selectedLog.name}
+                  evalStatus=${(_k = selectedLog == null ? void 0 : selectedLog.contents) == null ? void 0 : _k.status}
+                  evalError=${(_l = selectedLog == null ? void 0 : selectedLog.contents) == null ? void 0 : _l.error}
+                  evalVersion=${(_m = selectedLog == null ? void 0 : selectedLog.contents) == null ? void 0 : _m.version}
+                  evalSpec=${(_n = selectedLog == null ? void 0 : selectedLog.contents) == null ? void 0 : _n.eval}
+                  evalPlan=${(_o = selectedLog == null ? void 0 : selectedLog.contents) == null ? void 0 : _o.plan}
+                  evalStats=${(_p = selectedLog == null ? void 0 : selectedLog.contents) == null ? void 0 : _p.stats}
+                  evalResults=${(_q = selectedLog == null ? void 0 : selectedLog.contents) == null ? void 0 : _q.results}
+                  showToggle=${showToggle}
+                  onToggle=${clearSelectedLog}
+                  samples=${filteredSamples}
+                  sampleMode=${sampleMode}
+                  groupBy=${groupBy}
+                  groupByOrder=${groupByOrder}
+                  sampleStatus=${sampleStatus}
+                  sampleError=${sampleError}
+                  samplesDescriptor=${samplesDescriptor}
+                  refreshLog=${refreshLog}
+                  capabilities=${capabilities}
+                  selected=${selectedLogIndex}
+                  selectedSample=${selectedSample}
+                  selectedSampleIndex=${selectedSampleIndex}
+                  setSelectedSampleIndex=${setSelectedSampleIndex}
+                  setShowingSampleDialog=${handleSampleShowingDialog}
+                  nextSample=${nextSample}
+                  previousSample=${previousSample}
+                  selectedTab=${selectedWorkspaceTab}
+                  setSelectedTab=${setSelectedWorkspaceTab}
+                  selectedSampleTab=${selectedSampleTab}
+                  setSelectedSampleTab=${setSelectedSampleTab}
+                  sort=${sort}
+                  setSort=${setSort}
+                  epochs=${(_t = (_s = (_r = selectedLog == null ? void 0 : selectedLog.contents) == null ? void 0 : _r.eval) == null ? void 0 : _s.config) == null ? void 0 : _t.epochs}
+                  epoch=${epoch}
+                  setEpoch=${setEpoch}
+                  filter=${filter}
+                  setFilter=${setFilter}
+                  score=${score}
+                  setScore=${setScore}
+                  scores=${scores}
+                  renderContext=${context}
+                />`}
     </div>
     ${afterBodyElements}
     </${AppErrorBoundary}>
