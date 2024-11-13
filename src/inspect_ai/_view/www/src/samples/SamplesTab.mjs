@@ -106,7 +106,6 @@ export const SamplesTab = ({
         items=${items}
         sampleDescriptor=${sampleDescriptor}
         selectedIndex=${selectedSampleIndex}
-        setSelectedIndex=${setSelectedSampleIndex}
         selectedScore=${selectedScore}
         nextSample=${nextSample}
         prevSample=${previousSample}
